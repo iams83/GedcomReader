@@ -1,0 +1,88 @@
+node.invisible {
+    size: 0px;
+    fill-mode: none;
+    stroke-mode: none;
+}
+
+node.male {
+    shape: circle;
+    size: 10px;
+    fill-mode: plain;
+    fill-color: #1E90FF;
+    stroke-mode: plain;
+}
+
+node.female {
+    shape: circle;
+    size: 10px;
+    fill-mode: plain;
+    fill-color: #FF1493;
+    stroke-mode: plain;
+}
+
+node.unknown {
+    shape: circle;
+    size: 10px;
+    fill-mode: plain;
+    fill-color: #888;
+    stroke-mode: plain;
+}
+
+node.selected_male {
+    shape: circle;
+    size: 15px;
+    fill-mode: plain;
+    fill-color: #1E90FF;
+    stroke-width: 2px;
+    stroke-mode: plain;
+}
+
+node.selected_female {
+    shape: circle;
+    size: 15px;
+    fill-mode: plain;
+    fill-color: #FF1493;
+    stroke-width: 2px;
+    stroke-mode: plain;
+}
+
+node.selected_unknown {
+    shape: circle;
+    size: 15px;
+    fill-mode: plain;
+    fill-color: #888;
+    stroke-width: 2px;
+    stroke-mode: plain;
+}
+
+node.family {
+    shape: circle;
+    size: 5px;
+    fill-mode: plain;
+    fill-color: #00AA00;
+    stroke-mode: plain;
+}
+
+node.selected_family {
+    shape: circle;
+    size: 10px;
+    fill-mode: plain;
+    fill-color: #00AA00;
+    stroke-width: 2px;
+    stroke-mode: plain;
+}
+
+edge.parent {
+    shape: line;
+    size: 2px;
+    fill-color: #00AA00;
+    stroke-mode: plain;
+}
+
+edge.child {
+    shape: line;
+    size: 1px;
+    fill-color: #00FF00;
+    stroke-mode: none;
+}
+
