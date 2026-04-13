@@ -6,7 +6,7 @@
 
     <groupId>iamd</groupId>
     <artifactId>GedcomReader</artifactId>
-    <version>1.7.0</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>GedcomReader</name>
@@ -128,7 +128,7 @@
                         </goals>
                         <configuration>
                             <headerType>gui</headerType>
-                            <outfile>${project.build.directory}/${project.artifactId}.exe</outfile>
+                            <outfile>${project.build.directory}/${project.artifactId}-${project.version}.exe</outfile>
                             <jar>${project.build.directory}/${project.artifactId}-${project.version}.jar</jar>
                             <icon>${basedir}/src/main/resources/iamd/gedcom/rsrc/Lavanda.ico</icon>
                             <errTitle>${project.artifactId} Error</errTitle>
