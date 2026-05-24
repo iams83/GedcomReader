@@ -66,7 +66,7 @@ public class MainWindow extends JFrame
 {
     public static final String APP_NAME = Messages.getString("MainWindow.title"); //$NON-NLS-1$
     
-    public static final String VERSION = "1.0.0"; //$NON-NLS-1$
+    public static final String VERSION = "1.0.1"; //$NON-NLS-1$
 
     public static final String TITLE = APP_NAME + " " + VERSION; //$NON-NLS-1$
     

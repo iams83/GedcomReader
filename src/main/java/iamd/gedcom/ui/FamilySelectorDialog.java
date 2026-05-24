@@ -23,6 +23,7 @@ import iamd.gedcom.datamodel.Document;
 import iamd.gedcom.datamodel.Family;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.Individual.Sex;
+import iamd.gedcom.format.GedComContext;
 import iamd.ui.BorderListPanelGenerator;
 import iamd.ui.ComboBoxEditor;
 import iamd.ui.TextLineEditor;
@@ -270,20 +271,7 @@ public class FamilySelectorDialog extends JDialog
                 children = familyChildrenStr;
             }
             
-            if (family.getSpouseNames()
-                    .toUpperCase()
-                    .replaceAll("[���]", "A") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "E") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "I") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "O") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "U") //$NON-NLS-1$ //$NON-NLS-2$
-                .contains(text
-                    .toUpperCase()
-                    .replaceAll("[���]", "A") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "E") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "I") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "O") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "U"))) //$NON-NLS-1$ //$NON-NLS-2$
+            if (GedComContext.normalizeID(family.getSpouseNames()).contains(GedComContext.normalizeID(text)))
             {
                 if (family == currentFamily)
                     newCurrentIndex = this.tableModel.getRowCount(); 

@@ -1,9 +1,11 @@
 package iamd.gedcom.format;
 
 import java.lang.reflect.Field;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 public class GedComContext extends GedComNode
 {
@@ -135,6 +137,23 @@ public class GedComContext extends GedComNode
         this.idMap.put(id, gedNode);
     }
 
+    public static String normalizeID(String input)
+    {
+        if (input == null) {
+            return null;
+        }
+
+        // 1. Turn into upper case
+        input = input.toUpperCase();
+        
+        // 2. Decompose characters (e.g., 'é' becomes 'e' + combining acute accent)
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+        
+        // 3. Use a regex pattern to match and remove all diacritical marks
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        return pattern.matcher(normalized).replaceAll("");
+    }
+        
     public void addIdentifiedObject(IdentifiedGedComNode gedNode)
     {
         int i = 0;
@@ -146,13 +165,7 @@ public class GedComContext extends GedComNode
         
         else
         {
-            key = key
-                    .toUpperCase()
-                    .replaceAll("[���]", "A")
-                    .replaceAll("[���]", "E")
-                    .replaceAll("[���]", "I")
-                    .replaceAll("[���]", "O")
-                    .replaceAll("[���]", "U");
+            key = normalizeID(key);
 
             String cleanKey = "";
             

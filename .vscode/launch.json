@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Debug GedcomReader",
+            "request": "launch",
+            "mainClass": "iamd.gedcom.Main",
+            "projectName": "GedcomReader",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Maven: compile"
+        },
+        {
+            "type": "java",
+            "name": "Run GedcomReader",
+            "request": "launch",
+            "mainClass": "iamd.gedcom.Main",
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "preLaunchTask": "Maven: compile"
+        }
+    ]
+}

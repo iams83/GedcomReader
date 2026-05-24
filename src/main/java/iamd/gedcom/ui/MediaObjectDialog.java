@@ -22,6 +22,7 @@ import javax.swing.table.DefaultTableModel;
 import iamd.gedcom.datamodel.Document;
 import iamd.gedcom.datamodel.MediaObject;
 import iamd.gedcom.datamodel.MediaObject.MediaType;
+import iamd.gedcom.format.GedComContext;
 import iamd.ui.BorderListPanelGenerator;
 import iamd.ui.ComboBoxEditor;
 import iamd.ui.TextLineEditor;
@@ -245,20 +246,7 @@ public class MediaObjectDialog extends JDialog
         for (MediaObject mediaObject : this.document.listMediaObjects())
         {
             if (mediaObject.TITL != null &&
-                mediaObject.TITL
-                    .toUpperCase()
-                    .replaceAll("[���]", "A") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "E") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "I") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "O") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "U") //$NON-NLS-1$ //$NON-NLS-2$
-                .contains(text
-                    .toUpperCase()
-                    .replaceAll("[���]", "A") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "E") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "I") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "O") //$NON-NLS-1$ //$NON-NLS-2$
-                    .replaceAll("[���]", "U"))) //$NON-NLS-1$ //$NON-NLS-2$
+                GedComContext.normalizeID(mediaObject.TITL).contains(GedComContext.normalizeID(text)))
             {
                 if (mediaObject == currentMediaObject)
                     newCurrentIndex = this.tableModel.getRowCount(); 
