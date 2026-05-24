@@ -8,7 +8,7 @@
             "mainClass": "iamd.gedcom.Main",
             "projectName": "GedcomReader",
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "Maven: compile"
+            "preLaunchTask": "Prepare GedcomReader Launch"
         },
         {
             "type": "java",
@@ -16,8 +16,8 @@
             "request": "launch",
             "mainClass": "iamd.gedcom.Main",
             "cwd": "${workspaceFolder}",
-            "console": "internalConsole",
-            "preLaunchTask": "Maven: compile"
+            "console": "integratedTerminal",
+            "preLaunchTask": "Prepare GedcomReader Launch"
         }
     ]
 }

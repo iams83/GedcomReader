@@ -253,6 +253,36 @@ public class DateTime extends GedComNode
                                     break;
                                 }
                             }
+                            if (month == null)
+                            {
+                                for (Month m : Month.values())
+                                {
+                                    if (m.name().toUpperCase().equals(monthToken.toUpperCase()))
+                                    {
+                                        month = m;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (month == null)
+                            {
+                                String[][] extraNames = {
+                                    {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"},
+                                    {"Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"}
+                                };
+                                for (Month m : Month.values())
+                                {
+                                    for (String[] names : extraNames)
+                                    {
+                                        if (names[m.ordinal()].toUpperCase().equals(monthToken.toUpperCase()))
+                                        {
+                                            month = m;
+                                            break;
+                                        }
+                                    }
+                                    if (month != null) break;
+                                }
+                            }
                         }
                         else
                         {

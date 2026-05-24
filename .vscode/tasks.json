@@ -2,22 +2,43 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Maven: compile",
+            "label": "Install IamdUI",
             "type": "shell",
             "command": "mvn",
             "args": [
-                "compile"
+                "install"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/../IamdUI"
+            },
+            "problemMatcher": [
+                "$javac"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "Package GedcomReader",
+            "type": "shell",
+            "command": "mvn",
+            "args": [
+                "package"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
-                "$maven"
+                "$javac"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            "group": "build"
+        },
+        {
+            "label": "Prepare GedcomReader Launch",
+            "dependsOn": [
+                "Install IamdUI",
+                "Package GedcomReader"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
         }
     ]
 }

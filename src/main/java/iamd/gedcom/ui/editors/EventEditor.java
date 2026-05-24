@@ -121,6 +121,7 @@ public class EventEditor extends JPanel
         }
     };
     
+    private boolean isUpdating = false;
     private Document document;
     private Bool happened;
     private String date, time, place;
@@ -142,57 +143,68 @@ public class EventEditor extends JPanel
             @Override
             public void attributeModified(Object editingObject, Field editingField, Object value)
             {
-                DateTime date = null;
+                if (EventEditor.this.isUpdating)
+                    return;
+                EventEditor.this.isUpdating = true;
                 
-                if (EventEditor.this.date != null && !EventEditor.this.date.isEmpty())
+                try
                 {
-                    try
-                    {
-                        date = new DateTime(EventEditor.this.document, EventEditor.this.date);
-                        
-                        if (EventEditor.this.time != null && !EventEditor.this.time.isEmpty())
-                        {
-                            date.setTime(EventEditor.this.time);
-                        }
-                    }
-                    catch(GedComParseException e)
-                    {
-                        throw new AssertionError(e);
-                    }
-                }
-                
-                String place = null;
-                
-                if (EventEditor.this.place != null && !EventEditor.this.place.isEmpty())
-                    place = EventEditor.this.place;
-                
-                Event event = null;
-                
-                if (EventEditor.this.happened != null || date != null || place != null)
-                {
-                    event = new Event(gedCode, EventEditor.this.document, 
-                            EventEditor.this.happened == null ? null : EventEditor.this.happened.name());
+                    DateTime date = null;
                     
-                    if (EventEditor.this.happened == Bool.Y)
+                    if (EventEditor.this.date != null && !EventEditor.this.date.isEmpty())
                     {
-                        event.DATE = date;
-                        event.PLAC = place;
-                        
-                        if (event.DATE != null)
+                        try
                         {
-                            String dateAsString = event.DATE.dateToString(true);
-                            String timeAsString = event.DATE.timeToString();
+                            date = new DateTime(EventEditor.this.document, EventEditor.this.date);
                             
-                            if (dateAsString != null)
-                                EventEditor.this.dateEditor.initializeValue(dateAsString);
-                            
-                            if (timeAsString != null)
-                                EventEditor.this.timeEditor.initializeValue(timeAsString);
+                            if (EventEditor.this.time != null && !EventEditor.this.time.isEmpty())
+                            {
+                                date.setTime(EventEditor.this.time);
+                            }
+                        }
+                        catch(GedComParseException e)
+                        {
+                            throw new AssertionError(e);
                         }
                     }
+                    
+                    String place = null;
+                    
+                    if (EventEditor.this.place != null && !EventEditor.this.place.isEmpty())
+                        place = EventEditor.this.place;
+                    
+                    Event event = null;
+                    
+                    if (EventEditor.this.happened != null || date != null || place != null)
+                    {
+                        event = new Event(gedCode, EventEditor.this.document, 
+                                EventEditor.this.happened == null ? null : EventEditor.this.happened.name());
+                        
+                        if (EventEditor.this.happened == Bool.Y)
+                        {
+                            event.DATE = date;
+                            event.PLAC = place;
+                            
+                            if (event.DATE != null)
+                            {
+                                String dateAsString = event.DATE.dateToString(true);
+                                String timeAsString = event.DATE.timeToString();
+                                
+                                if (dateAsString != null)
+                                    EventEditor.this.dateEditor.initializeValue(dateAsString);
+                                
+                                if (timeAsString != null)
+                                    EventEditor.this.timeEditor.initializeValue(timeAsString);
+                            }
+                        }
+                    }
+                    
+                    EventEditor.this.attributesBinder.setBindedValue(event);
                 }
-                
-                EventEditor.this.attributesBinder.setBindedValue(event);
+                finally
+                {
+                    EventEditor.this.isUpdating = false;
+                }
             }
         };
 
