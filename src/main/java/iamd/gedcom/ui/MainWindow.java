@@ -66,7 +66,7 @@ public class MainWindow extends JFrame
 {
     public static final String APP_NAME = Messages.getString("MainWindow.title"); //$NON-NLS-1$
     
-    public static final String VERSION = "1.0.1"; //$NON-NLS-1$
+    public static final String VERSION = "1.0.2"; //$NON-NLS-1$
 
     public static final String TITLE = APP_NAME + " " + VERSION; //$NON-NLS-1$
     
@@ -204,10 +204,10 @@ public class MainWindow extends JFrame
         if (chartPanelFont != null)
             this.chartPanel.setFont(chartPanelFont);
         
-        this.chartPanel.addChartPanelListener(new ChartPanelListener<GedComChartArc>()
+        this.chartPanel.addChartPanelListener(new ChartPanelListener<GedComChartElement>()
         {
             @Override
-            public void mouseEntered(MouseEvent e, GedComChartArc arc)
+            public void mouseEntered(MouseEvent e, GedComChartElement arc)
             {
                 Individual individual = arc.getIndividual();
                 
@@ -215,7 +215,7 @@ public class MainWindow extends JFrame
             }
 
             @Override
-            public void mouseExited(MouseEvent e, GedComChartArc arc)
+            public void mouseExited(MouseEvent e, GedComChartElement arc)
             {
                 if (MainWindow.this.chartPanel.getArcAt(e.getPoint()) == null)
                 {
@@ -225,12 +225,12 @@ public class MainWindow extends JFrame
             }
 
             @Override
-            public void mouseMoved(MouseEvent e, GedComChartArc arc)
+            public void mouseMoved(MouseEvent e, GedComChartElement arc)
             {
             }
 
             @Override
-            public void mouseClicked(MouseEvent e, GedComChartArc arc)
+            public void mouseClicked(MouseEvent e, GedComChartElement arc)
             {
                 SwingUtilities.invokeLater(new Runnable()
                 {

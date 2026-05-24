@@ -3,25 +3,23 @@ package iamd.gedcom.ui;
 import java.awt.Color;
 import java.awt.Font;
 
-import iamd.gedcom.datamodel.Bool;
 import iamd.gedcom.datamodel.Event;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.Individual.Sex;
-import iamd.ui.ChartArc;
+import iamd.ui.ChartRect;
 
-public class GedComChartArc extends ChartArc implements GedComChartElement
+public class GedComChartRect extends ChartRect implements GedComChartElement
 {
-    final private Individual individual;
+    private Individual individual;
     
     private Color color;
     
-    public GedComChartArc(double minRadius, double maxRadius, double centerAngle,
-            double maxAngleExtent, Individual individual)
+    public GedComChartRect(double x, double y, double width, double height, Individual individual)
     {
-        super(minRadius, maxRadius, Math.PI -centerAngle, maxAngleExtent,
+        super(x, y, width, height, 
                 Sex.toCharSymbol(individual.SEX), individual.NAME.getShortName() + " " + //$NON-NLS-1$
-                        (individual.DEAT != null && individual.DEAT.happened != Bool.N ? Event.DEATH_SYMBOL : "")); //$NON-NLS-1$
-     
+                (individual.DEAT != null && individual.DEAT.happened != iamd.gedcom.datamodel.Bool.N ? Event.DEATH_SYMBOL : "")); //$NON-NLS-1$
+
         this.individual = individual;
     }
     
@@ -47,5 +45,4 @@ public class GedComChartArc extends ChartArc implements GedComChartElement
     {
         return this.color;
     }
-
 }

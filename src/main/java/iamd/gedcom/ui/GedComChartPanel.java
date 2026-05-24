@@ -15,7 +15,7 @@ import iamd.gedcom.datamodel.Individual.FamilyChildRelationship;
 import iamd.gedcom.datamodel.Individual.Sex;
 
 @SuppressWarnings("serial")
-public class GedComChartPanel extends ChartPanel<GedComChartArc>
+public class GedComChartPanel extends ChartPanel<GedComChartElement>
 {
     enum ChartType
     {
@@ -46,21 +46,21 @@ public class GedComChartPanel extends ChartPanel<GedComChartArc>
     {
         this.setBackground(Color.white);
         
-        this.addChartPanelListener(new ChartPanelListener<GedComChartArc>()
+        this.addChartPanelListener(new ChartPanelListener<GedComChartElement>()
         {
             @Override
-            public void mouseClicked(MouseEvent e, GedComChartArc arc)
+            public void mouseClicked(MouseEvent e, GedComChartElement arc)
             {
             }
             
             @Override
-            public void mouseMoved(MouseEvent e, GedComChartArc arc)
+            public void mouseMoved(MouseEvent e, GedComChartElement arc)
             {
                 GedComChartPanel.this.repaint();
             }
             
             @Override
-            public void mouseExited(MouseEvent e, GedComChartArc arc)
+            public void mouseExited(MouseEvent e, GedComChartElement arc)
             {
                 arc.setFillingColor(arc.getColor());
                 
@@ -68,7 +68,7 @@ public class GedComChartPanel extends ChartPanel<GedComChartArc>
             }
             
             @Override
-            public void mouseEntered(MouseEvent e, GedComChartArc arc)
+            public void mouseEntered(MouseEvent e, GedComChartElement arc)
             {
                 arc.setFillingColor(Color.red);
                 
@@ -108,9 +108,13 @@ public class GedComChartPanel extends ChartPanel<GedComChartArc>
 
         if (this.type == ChartType.TwoWayChart)
         {
-            this.createParentChartArc(this.selectedIndividual, 0, Math.PI, 2 * Math.PI, 50, false, MAX_DEPTH);
+            final double SIBLINGS_ANGLE = Math.toRadians(12);
 
-            this.createDescendantChartArcs(this.selectedIndividual, 0, 0.0, Math.PI, DESCENDANT_MAX_DEPTH);
+            this.createSiblingsChartArcs(this.selectedIndividual, 130, 100, 50);
+            
+            this.createParentChartArc(this.selectedIndividual, 0, Math.PI + SIBLINGS_ANGLE, 2 * Math.PI - SIBLINGS_ANGLE, 50, false, MAX_DEPTH);
+            
+            this.createDescendantChartArcs(this.selectedIndividual, 0, SIBLINGS_ANGLE, Math.PI - SIBLINGS_ANGLE, DESCENDANT_MAX_DEPTH);
         }
         else if (this.type == ChartType.ParentChart)
         {
@@ -220,6 +224,76 @@ public class GedComChartPanel extends ChartPanel<GedComChartArc>
             level += this.colors.length;
         
         return this.colors[level % this.colors.length];
+    }
+
+    private void createSiblingsChartArcs(Individual individual, double minRadius, double extraRadiusPerSibling, double height)
+    {
+        Collection<FamilyChildRelationship> families = individual.getParentFamilies();
+
+        ArrayList<Individual> olderSiblings = new ArrayList<>();
+        ArrayList<Individual> youngerSiblings = new ArrayList<>();
+        
+        for (FamilyChildRelationship familyChild : families)
+        {
+            Collection<Individual> children = familyChild.family.getChildren();
+            
+            boolean individualFound = false;
+            
+            for (Individual child : children)
+            {
+                if (child == individual)
+                {
+                    individualFound = true;
+                }
+                else if (individualFound)
+                {
+                    youngerSiblings.add(child);
+                }
+                else
+                {
+                    olderSiblings.addFirst(child);
+                }
+            }
+        }
+
+        int siblingIndex = 0;
+
+        for (Individual sibling : olderSiblings)
+        {
+            GedComChartRect siblingArc = new GedComChartRect(
+                    - minRadius - (siblingIndex + 1) * extraRadiusPerSibling, 
+                    - height / 2, 
+                    extraRadiusPerSibling, 
+                    height,
+                    sibling);
+
+            siblingArc.setFont(this.getFont());
+            siblingArc.setColor(Color.lightGray);
+
+            addArc(siblingArc);
+
+            siblingIndex ++;
+        }
+
+        siblingIndex = 0;
+
+        for (Individual sibling : youngerSiblings)
+        {
+            GedComChartRect siblingArc = new GedComChartRect(
+                    minRadius + siblingIndex * extraRadiusPerSibling, 
+                    - height / 2, 
+                    extraRadiusPerSibling, 
+                    height,
+                    sibling);
+
+            siblingArc.setFont(this.getFont());
+            siblingArc.setColor(Color.lightGray);
+
+            addArc(siblingArc);
+
+            siblingIndex ++;
+        }
+
     }
 
     private void createParentChartArc(Individual individual, int level, double minExtent, double maxExtent, double radiusOffset, boolean circleChart, int maxDepth)
