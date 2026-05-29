@@ -18,7 +18,7 @@ public class MediaObjectRowPanel extends ObjectRowPanel<MediaObjectRowPanel>
         
         String myString = "<html>";
 
-        myString += "<p>" + mediaObject.toString() + "</p>";
+        myString += "<p>" + mediaObject.getDisplayLabel() + "</p>";
         
         this.setText(myString);
     }

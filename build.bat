@@ -1,5 +1,5 @@
 cd ../IamdUI
-call mvn clean install
+call mvn install
 
 cd ../GedcomReader
-call mvn clean package
+call mvn package

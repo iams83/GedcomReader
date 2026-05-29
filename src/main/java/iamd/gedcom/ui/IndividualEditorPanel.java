@@ -418,15 +418,18 @@ public class IndividualEditorPanel extends EditorPanel
         this.ownFamilyInfoPanel.add(createTopBorder(ownFamilyRowPanelList));
 
         RowPanelList<MediaObjectRowPanel> mediaPanelList = 
-                new RowPanelList<MediaObjectRowPanel>(Messages.getString("IndividualEditorPanel.ownfamily"),  //$NON-NLS-1$
+                new RowPanelList<MediaObjectRowPanel>(Messages.getString("IndividualEditorPanel.mediaobjects"),  //$NON-NLS-1$
                         GedComRowPanelList.getMediaObjectRowPanelList(individual.OBJE, individual, 
-                                Messages.getString("IndividualEditorPanel.spouse"), Messages.getString("IndividualEditorPanel.children"), true, true), Messages.getString("IndividualEditorPanel.addspouse")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                                Messages.getString("IndividualEditorPanel.mediaobject"), Messages.getString("IndividualEditorPanel.children"), true, true), Messages.getString("IndividualEditorPanel.addMediaObject")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         
         mediaPanelList.addRowPanelListListener(new RowPanelListListener<MediaObjectRowPanel>()
         {
             @Override
             public void rowPanelClicked(MediaObjectRowPanel rowPanel)
             {
+                MediaObjectPreviewDialog previewDialog = new MediaObjectPreviewDialog(
+                    IndividualEditorPanel.this.frame, rowPanel.getMediaObject());
+                previewDialog.setVisible(true);
             }
 
             @Override
@@ -469,7 +472,7 @@ public class IndividualEditorPanel extends EditorPanel
                 
                 MediaObjectDialog mediaObjectSelector = new MediaObjectDialog(
                         IndividualEditorPanel.this.frame, 
-                        Messages.getString("IndividualEditorPanel.newspouse") + individual.getName() + "...",  //$NON-NLS-1$ //$NON-NLS-2$
+                        Messages.getString("IndividualEditorPanel.addmediaobject") + individual.getName() + "...",  //$NON-NLS-1$ //$NON-NLS-2$
                         document, true);
                 
                 MediaObject newMediaObject = mediaObjectSelector.getSelectedMediaObject();
@@ -477,6 +480,8 @@ public class IndividualEditorPanel extends EditorPanel
                 if (newMediaObject != null)
                 {
                     individual.addNewMediaObject(newMediaObject);
+
+                    IndividualEditorPanel.this.setModel(individual);
 
                     for (GedComModifiedListener listener : IndividualEditorPanel.this.gedcomModifiedListeners)
                         listener.attributeModified(individual);

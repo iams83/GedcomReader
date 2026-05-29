@@ -7,8 +7,6 @@ import iamd.gedcom.datamodel.Family;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.Individual.FamilyChildRelationship;
 import iamd.gedcom.datamodel.MediaObject;
-import iamd.gedcom.ui.FamilyRowPanel;
-import iamd.gedcom.ui.IndividualRowPanel;
 
 public class GedComRowPanelList
 {

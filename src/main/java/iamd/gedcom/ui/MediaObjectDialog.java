@@ -4,9 +4,13 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -15,6 +19,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -25,6 +30,7 @@ import iamd.gedcom.datamodel.MediaObject.MediaType;
 import iamd.gedcom.format.GedComContext;
 import iamd.ui.BorderListPanelGenerator;
 import iamd.ui.ComboBoxEditor;
+import iamd.ui.FilePathEditor;
 import iamd.ui.TextLineEditor;
 
 @SuppressWarnings("serial")
@@ -61,7 +67,7 @@ public class MediaObjectDialog extends JDialog
         }
     };
 
-    TextLineEditor       file = new TextLineEditor();
+    FilePathEditor       file = new FilePathEditor();
     TextLineEditor       form = new TextLineEditor();
     TextLineEditor       titl = new TextLineEditor();
     ComboBoxEditor<MediaType> type  = new ComboBoxEditor<MediaType>(
@@ -181,22 +187,23 @@ public class MediaObjectDialog extends JDialog
             {
                 newIndividualPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
                 
+                // Create file path panel
+                JPanel topPanel2 = new JPanel(new BorderLayout());
+                topPanel2.add(this.file);
+                topPanel2.add(this.form, BorderLayout.EAST);
+                
                 BorderListPanelGenerator globalPanelGenerator = new BorderListPanelGenerator(BorderLayout.NORTH);
     
-                JLabel formLabel = new JLabel(Messages.getString("SelectorDialog.form")); //$NON-NLS-1$
+                JLabel formLabel = new JLabel(Messages.getString("SelectorDialog.format")); //$NON-NLS-1$
                 formLabel.setPreferredSize(this.form.getPreferredSize());
                 
                 JPanel topPanel1 = new JPanel(new BorderLayout());
                 topPanel1.add(new JLabel(Messages.getString("SelectorDialog.file"))); //$NON-NLS-1$
                 topPanel1.add(formLabel, BorderLayout.EAST);
                 
-                JPanel topPanel2 = new JPanel(new BorderLayout());
-                topPanel2.add(this.file);
-                topPanel2.add(this.form, BorderLayout.EAST);
-                
                 globalPanelGenerator.add(topPanel1);
                 globalPanelGenerator.add(topPanel2);
-                globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.titl")));             //$NON-NLS-1$
+                globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.title")));             //$NON-NLS-1$
                 globalPanelGenerator.add(this.titl);
                 globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.type")));                 //$NON-NLS-1$
                 globalPanelGenerator.add(this.type);
@@ -236,8 +243,9 @@ public class MediaObjectDialog extends JDialog
     {
         int selectedRow = this.table.getSelectedRow();
         
-        MediaObject currentMediaObject = selectedRow < 0 || selectedRow >= this.tableModel.getRowCount() ? null : 
-            ((MediaObjectRow) this.tableModel.getValueAt(selectedRow, 0)).mediaObject;
+        // Get current selected FILE value
+        String currentFile = selectedRow < 0 || selectedRow >= this.tableModel.getRowCount() ? null : 
+            (String) this.tableModel.getValueAt(selectedRow, 0);
         
         this.tableModel.setRowCount(0);
         
@@ -248,10 +256,15 @@ public class MediaObjectDialog extends JDialog
             if (mediaObject.TITL != null &&
                 GedComContext.normalizeID(mediaObject.TITL).contains(GedComContext.normalizeID(text)))
             {
-                if (mediaObject == currentMediaObject)
+                if (currentFile != null && currentFile.equals(mediaObject.FILE))
                     newCurrentIndex = this.tableModel.getRowCount(); 
 
-                this.tableModel.addRow(new Object[] { new MediaObjectRow(mediaObject) });
+                this.tableModel.addRow(new Object[] { 
+                    mediaObject.FILE != null ? mediaObject.FILE : "",
+                    mediaObject.FORM != null ? mediaObject.FORM : "",
+                    mediaObject.TITL != null ? mediaObject.TITL : "",
+                    mediaObject.TYPE != null ? mediaObject.TYPE.name() : ""
+                });
             }
         }
         
@@ -260,6 +273,57 @@ public class MediaObjectDialog extends JDialog
             this.table.getSelectionModel().setSelectionInterval(newCurrentIndex, newCurrentIndex);
         }
     }
+    
+    private void autofillFromFile(String filePath, MediaObject mediaObject)
+    {
+        if (filePath == null || filePath.isEmpty())
+            return;
+        
+        // Extract filename from path
+        String fileName = filePath;
+        int lastSeparator = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+        if (lastSeparator >= 0)
+        {
+            fileName = filePath.substring(lastSeparator + 1);
+        }
+        
+        int lastDot = fileName.lastIndexOf('.');
+        
+        // Set title from filename (without extension)
+        String title = (lastDot > 0) ? fileName.substring(0, lastDot) : fileName;
+        mediaObject.TITL = title;
+        // Update the form field display and trigger binding
+        SwingUtilities.invokeLater(() -> {
+            this.titl.getComponent().setText(title);
+            // Force update of the display label
+            this.titl.getComponent().repaint();
+        });
+        
+        // Set format and type from extension
+        if (lastDot > 0)
+        {
+            String extension = fileName.substring(lastDot + 1).toLowerCase();
+            
+            // Set form from extension
+            mediaObject.FORM = extension;
+            SwingUtilities.invokeLater(() -> {
+                this.form.getComponent().setText(extension);
+                this.form.getComponent().repaint();
+            });
+            
+            // Set type based on extension
+            MediaType mediaType = MediaType.getMediaTypeForExtension(extension);
+            mediaObject.TYPE = mediaType;
+            SwingUtilities.invokeLater(() -> {
+                this.type.setSelectedValue(mediaType);
+            });
+        }
+        
+        // Request focus on the title field to auto-confirm and hide the file field
+        SwingUtilities.invokeLater(() -> {
+            this.titl.getComponent().requestFocusInWindow();
+        });
+    }
 
     public MediaObject getSelectedMediaObject()
     {
@@ -267,6 +331,12 @@ public class MediaObjectDialog extends JDialog
         
         MediaObject newMediaObject = new MediaObject(this.document);
 
+        File gedcomFile = this.document.getFile();
+        if (gedcomFile != null)
+        {
+            this.file.setDefaultDirectory(gedcomFile.getParentFile());
+        }
+        
         this.file   .bindValue(newMediaObject, "FILE"); //$NON-NLS-1$
         this.form   .bindValue(newMediaObject, "FORM"); //$NON-NLS-1$
         this.titl   .bindValue(newMediaObject, "TITL"); //$NON-NLS-1$
@@ -275,6 +345,30 @@ public class MediaObjectDialog extends JDialog
         this.filterBy(""); //$NON-NLS-1$
 
         this.table.getSelectionModel().setSelectionInterval(0, 0);
+        
+        // Add DocumentListener to the file path text field to autofill when text changes
+        this.file.getComponent().getDocument().addDocumentListener(new DocumentListener()
+        {
+            @Override
+            public void insertUpdate(DocumentEvent e)
+            {
+                String filePath = file.getComponent().getText();
+                if (filePath != null && !filePath.isEmpty())
+                {
+                    autofillFromFile(filePath, newMediaObject);
+                }
+            }
+            
+            @Override
+            public void removeUpdate(DocumentEvent e)
+            {
+            }
+            
+            @Override
+            public void changedUpdate(DocumentEvent e)
+            {
+            }
+        });
         
         this.setVisible(true);
         
@@ -285,7 +379,14 @@ public class MediaObjectDialog extends JDialog
         {        
             int selectedRow = this.table.getSelectedRow();
             
-            return ((MediaObjectRow) this.tableModel.getValueAt(selectedRow, 0)).mediaObject;
+            // Find the MediaObject matching the selected FILE value
+            String selectedFile = (String) this.tableModel.getValueAt(selectedRow, 0);
+            for (MediaObject mo : this.document.listMediaObjects())
+            {
+                if (selectedFile.equals(mo.FILE))
+                    return mo;
+            }
+            return null;
         }
         else
         {
