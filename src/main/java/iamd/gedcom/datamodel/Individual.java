@@ -222,8 +222,8 @@ public class Individual extends IdentifiedGedComNode
     @GEDNodeAttribute
     public Event CHAN;
     
-    @GEDNodeReferenceList
-    public ArrayList<MediaObject> OBJE = new ArrayList<MediaObject>();
+    @GEDNodeList(MediaObjectReference.class)
+    public ArrayList<MediaObjectReference> OBJE = new ArrayList<MediaObjectReference>();
 
     public Individual(String gedCode, Document document)
     {
@@ -374,35 +374,35 @@ public class Individual extends IdentifiedGedComNode
         this.CHAN.DATE = DateTime.now(this.getDocument());
     }
 
-    public void setIndividualOlderMediaObject(MediaObject mediaObject)
+    public void setIndividualOlderMediaObject(MediaObjectReference mediaObjectRef)
     {
-        int i = this.OBJE.indexOf(mediaObject);
+        int i = this.OBJE.indexOf(mediaObjectRef);
         
         if (i > 0)
         {
             this.OBJE.remove(i);
-            this.OBJE.add(i - 1, mediaObject);
+            this.OBJE.add(i - 1, mediaObjectRef);
         }
     }
 
-    public void setIndividualYoungerMediaObject(MediaObject mediaObject)
+    public void setIndividualYoungerMediaObject(MediaObjectReference mediaObjectRef)
     {
-        int i = this.OBJE.indexOf(mediaObject);
+        int i = this.OBJE.indexOf(mediaObjectRef);
         
         if (i < this.OBJE.size() - 1)
         {
             this.OBJE.remove(i);
-            this.OBJE.add(i + 1, mediaObject);
+            this.OBJE.add(i + 1, mediaObjectRef);
         }
     }
 
-    public void removeMediaObject(MediaObject mediaObject)
+    public void removeMediaObject(MediaObjectReference mediaObjectRef)
     {
-        this.OBJE.remove(mediaObject);
+        this.OBJE.remove(mediaObjectRef);
     }
 
-    public void addNewMediaObject(MediaObject mediaObject)
+    public void addNewMediaObjectReference(MediaObjectReference mediaObjectRef)
     {
-        this.OBJE.add(mediaObject);
+        this.OBJE.add(mediaObjectRef);
     }
 }

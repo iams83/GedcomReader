@@ -141,39 +141,42 @@ abstract public class GedComNode
                         {
                             out.println((depth + 1) + " " + field.getName() + " " + value);
                         }
-                        else
+                        else if (value instanceof GedComNode)
                         {
-                            GedComNode node = ((GedComNode) value);
-                            
-                            if (node != null)
-                                node.print(out, depth + 1);
+                            ((GedComNode) value).print(out, depth + 1);
+                        }
+                        else if (field.getType().isPrimitive())
+                        {
+                            out.println((depth + 1) + " " + field.getName() + " " + value);
                         }
                     }
     
                     else if (field.isAnnotationPresent(GEDNodeReference.class))
                     {
-                        GedComNode node = ((GedComNode) value);
-                        
-                        if (node != null)
+                        if (value instanceof GedComNode)
                         {
-                            out.println((depth + 1) + " " + field.getName() + " " + this.getContext().getID(node));
+                            out.println((depth + 1) + " " + field.getName() + " " + this.getContext().getID((GedComNode) value));
                         }
                     }
 
                     else if (field.isAnnotationPresent(GEDNodeReferenceList.class))
                     {
-                        ArrayList<GedComNode> nodes = ((ArrayList<GedComNode>) value);
+                        ArrayList<?> nodes = ((ArrayList<?>) value);
                         
-                        for (GedComNode node : nodes)
+                        for (Object node : nodes)
                         {
-                            out.println((depth + 1) + " " + field.getName() + " " + this.getContext().getID(node));
+                            if (node instanceof GedComNode)
+                                out.println((depth + 1) + " " + field.getName() + " " + this.getContext().getID((GedComNode) node));
                         }
                     }
                     
                     else if (field.isAnnotationPresent(GEDNodeList.class))
                     {
-                        for (GedComNode node : (ArrayList<? extends GedComNode>) value)
-                            node.print(out, depth + 1);
+                        for (Object node : (ArrayList<?>) value)
+                        {
+                            if (node instanceof GedComNode)
+                                ((GedComNode) node).print(out, depth + 1);
+                        }
                     }
                 }
                 
@@ -248,6 +251,35 @@ abstract public class GedComNode
                             return GedComNode.Null;
                         
                         throw new GedComParseException("Could not map " + gedCode + " " + rest + " in " + this.getClass().getName());
+                    }
+                    else if (field.getType().isPrimitive())
+                    {
+                        if (rest == null)
+                        {
+                            field.set(this, 0);
+                        }
+                        else
+                        {
+                            String trimmedRest = rest.trim();
+                            if (field.getType().equals(int.class))
+                                field.set(this, Integer.parseInt(trimmedRest));
+                            else if (field.getType().equals(long.class))
+                                field.set(this, Long.parseLong(trimmedRest));
+                            else if (field.getType().equals(double.class))
+                                field.set(this, Double.parseDouble(trimmedRest));
+                            else if (field.getType().equals(float.class))
+                                field.set(this, Float.parseFloat(trimmedRest));
+                            else if (field.getType().equals(boolean.class))
+                                field.set(this, Boolean.parseBoolean(trimmedRest));
+                            else if (field.getType().equals(char.class))
+                                field.set(this, trimmedRest.length() > 0 ? trimmedRest.charAt(0) : '\0');
+                            else if (field.getType().equals(short.class))
+                                field.set(this, Short.parseShort(trimmedRest));
+                            else if (field.getType().equals(byte.class))
+                                field.set(this, Byte.parseByte(trimmedRest));
+                        }
+                        
+                        return GedComNode.Null;
                     }
                     else
                     {

@@ -22,6 +22,7 @@ import iamd.gedcom.datamodel.Document;
 import iamd.gedcom.datamodel.Family;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.MediaObject;
+import iamd.gedcom.datamodel.MediaObjectReference;
 import iamd.gedcom.ui.editors.EventEditor;
 import iamd.gedcom.ui.editors.LongTextEditor;
 import iamd.gedcom.ui.editors.SexEditor;
@@ -428,14 +429,14 @@ public class IndividualEditorPanel extends EditorPanel
             public void rowPanelClicked(MediaObjectRowPanel rowPanel)
             {
                 MediaObjectPreviewDialog previewDialog = new MediaObjectPreviewDialog(
-                    IndividualEditorPanel.this.frame, rowPanel.getMediaObject());
+                    IndividualEditorPanel.this.frame, rowPanel.getMediaObjectReference());
                 previewDialog.setVisible(true);
             }
 
             @Override
             public void rowPanelMovedUp(MediaObjectRowPanel rowPanel)
             {
-                individual.setIndividualOlderMediaObject(rowPanel.getMediaObject());
+                individual.setIndividualOlderMediaObject(rowPanel.getMediaObjectReference());
                 
                 IndividualEditorPanel.this.setModel(individual);
 
@@ -446,7 +447,7 @@ public class IndividualEditorPanel extends EditorPanel
             @Override
             public void rowPanelMovedDown(MediaObjectRowPanel rowPanel)
             {
-                individual.setIndividualYoungerMediaObject(rowPanel.getMediaObject());
+                individual.setIndividualYoungerMediaObject(rowPanel.getMediaObjectReference());
                 
                 IndividualEditorPanel.this.setModel(individual);
 
@@ -457,7 +458,7 @@ public class IndividualEditorPanel extends EditorPanel
             @Override
             public void rowPanelDeleted(MediaObjectRowPanel rowPanel)
             {
-                individual.removeMediaObject(rowPanel.getMediaObject());
+                individual.removeMediaObject(rowPanel.getMediaObjectReference());
 
                 IndividualEditorPanel.this.setModel(individual);
 
@@ -479,7 +480,8 @@ public class IndividualEditorPanel extends EditorPanel
 
                 if (newMediaObject != null)
                 {
-                    individual.addNewMediaObject(newMediaObject);
+                    MediaObjectReference newMediaObjectRef = new MediaObjectReference(document, newMediaObject);
+                    individual.addNewMediaObjectReference(newMediaObjectRef);
 
                     IndividualEditorPanel.this.setModel(individual);
 

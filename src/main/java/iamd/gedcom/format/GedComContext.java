@@ -42,7 +42,9 @@ public class GedComContext extends GedComNode
             {
                 try
                 {
-                    ((ArrayList) this.field.get(this.object)).add(idMap.get(this.id));
+                    Object referencedObject = idMap.get(this.id);
+                    if (referencedObject != null)
+                        ((ArrayList) this.field.get(this.object)).add(referencedObject);
                 }
                 catch (NullPointerException | IllegalArgumentException | IllegalAccessException e)
                 {
@@ -85,7 +87,9 @@ public class GedComContext extends GedComNode
             {
                 try
                 {
-                    ((ArrayList) this.field.get(idMap.get(this.id))).add(this.value);
+                    Object target = idMap.get(this.id);
+                    if (target != null && this.value != null)
+                        ((ArrayList) this.field.get(target)).add(this.value);
                 }
                 catch (NullPointerException | IllegalArgumentException | IllegalAccessException e)
                 {

@@ -7,6 +7,7 @@ import iamd.gedcom.datamodel.Family;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.Individual.FamilyChildRelationship;
 import iamd.gedcom.datamodel.MediaObject;
+import iamd.gedcom.datamodel.MediaObjectReference;
 
 public class GedComRowPanelList
 {
@@ -21,13 +22,14 @@ public class GedComRowPanelList
         return list;
     }
 
-    static public Collection<MediaObjectRowPanel> getMediaObjectRowPanelList(Collection<MediaObject> mediaObjects, Individual individual, String parents, String children, 
+    static public Collection<MediaObjectRowPanel> getMediaObjectRowPanelList(Collection<MediaObjectReference> mediaObjectRefs, Individual individual, String parents, String children, 
             boolean reorderButtons, boolean deleteButton)
     {
         ArrayList<MediaObjectRowPanel> list = new ArrayList<MediaObjectRowPanel>();
         
-        for (MediaObject mediaObject : mediaObjects)
-            list.add(new MediaObjectRowPanel(mediaObject, individual, parents, children, reorderButtons, deleteButton));
+        for (MediaObjectReference mediaObjectRef : mediaObjectRefs)
+            if (mediaObjectRef != null)
+                list.add(new MediaObjectRowPanel(mediaObjectRef, individual, parents, children, reorderButtons, deleteButton));
             
         return list;
     }

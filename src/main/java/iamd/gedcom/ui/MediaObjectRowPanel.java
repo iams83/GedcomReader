@@ -1,30 +1,30 @@
 package iamd.gedcom.ui;
 
 import iamd.gedcom.datamodel.Individual;
-import iamd.gedcom.datamodel.MediaObject;
+import iamd.gedcom.datamodel.MediaObjectReference;
 import iamd.ui.ObjectRowPanel;
 
 @SuppressWarnings("serial")
 public class MediaObjectRowPanel extends ObjectRowPanel<MediaObjectRowPanel>
 {
-    final private MediaObject mediaObject;
+    final private MediaObjectReference mediaObjectRef;
     
-    public MediaObjectRowPanel(MediaObject mediaObject, Individual individual, String parents, String children, 
+    public MediaObjectRowPanel(MediaObjectReference mediaObjectRef, Individual individual, String parents, String children, 
             boolean reorderButtons, boolean deleteButton)
     {
         super(reorderButtons, deleteButton);
         
-        this.mediaObject = mediaObject;
+        this.mediaObjectRef = mediaObjectRef;
         
         String myString = "<html>";
 
-        myString += "<p>" + mediaObject.getDisplayLabel() + "</p>";
+        myString += "<p>" + mediaObjectRef.mediaObject.getDisplayLabel() + "</p>";
         
         this.setText(myString);
     }
 
-    public MediaObject getMediaObject()
+    public MediaObjectReference getMediaObjectReference()
     {
-        return this.mediaObject;
+        return this.mediaObjectRef;
     }
 }
