@@ -430,7 +430,10 @@ public class IndividualEditorPanel extends EditorPanel
             {
                 MediaObjectPreviewDialog previewDialog = new MediaObjectPreviewDialog(
                     IndividualEditorPanel.this.frame, rowPanel.getMediaObjectReference());
+
                 previewDialog.setVisible(true);
+                
+                rowPanel.refresh();
             }
 
             @Override

@@ -7,8 +7,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
-import java.awt.GridLayout;
-import java.awt.Image;
 import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -20,10 +18,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -44,7 +39,6 @@ import iamd.ui.GraphicsPanel;
 @SuppressWarnings("serial")
 public class MediaObjectPreviewDialog extends JDialog
 {
-    private final MediaObjectReference mediaObjectRef;
     private final MediaObject mediaObject;
     
     int cropX = 0, cropY = 0, cropWidth = 0, cropHeight = 0;
@@ -62,13 +56,12 @@ public class MediaObjectPreviewDialog extends JDialog
     {
         super(parent, "Media Object Preview", true);
         
-        this.mediaObjectRef = mediaObjectRef;
         this.mediaObject = mediaObjectRef.mediaObject;
 
         if (mediaObjectRef.CROP != null)
         {
-            this.cropX = mediaObjectRef.CROP.TOP;
-            this.cropY = mediaObjectRef.CROP.LEFT;
+            this.cropX = mediaObjectRef.CROP.LEFT;
+            this.cropY = mediaObjectRef.CROP.TOP;
             this.cropWidth = mediaObjectRef.CROP.WIDTH;
             this.cropHeight = mediaObjectRef.CROP.HEIGHT;
 
@@ -193,11 +186,11 @@ public class MediaObjectPreviewDialog extends JDialog
                 // Create image panel
                 this.imagePanel = new CropImagePanel();
                 
-                File mediaFile = mediaObject.getMediaFile();
-                if (mediaFile != null && mediaFile.exists())
+                BufferedImage mediaImage = mediaObject.getImage();
+                if (mediaImage != null)
                 {
                     SwingUtilities.invokeLater(() -> {
-                        this.imagePanel.loadImage(mediaFile);
+                        this.imagePanel.setImage(mediaImage);
                     });
                 }
                 
@@ -255,8 +248,8 @@ public class MediaObjectPreviewDialog extends JDialog
                 if (mediaObject.TYPE == MediaType.Picture && cropWidth > 0 && cropHeight > 0)
                 {
                     mediaObjectRef.CROP = new Crop("CROP", mediaObjectRef.getDocument());
-                    mediaObjectRef.CROP.TOP = cropX;
-                    mediaObjectRef.CROP.LEFT = cropY;
+                    mediaObjectRef.CROP.LEFT = cropX;
+                    mediaObjectRef.CROP.TOP = cropY;
                     mediaObjectRef.CROP.WIDTH = cropWidth;
                     mediaObjectRef.CROP.HEIGHT = cropHeight;
                 }
@@ -407,24 +400,13 @@ public class MediaObjectPreviewDialog extends JDialog
             });
         }
 
-        public void loadImage(File file)
+        public void setImage(BufferedImage image)
         {
-            try
-            {
-                this.image = ImageIO.read(file);
-                if (this.image != null)
-                {
-                    initializeBoundingBox(new Rectangle2D.Double(
-                        0, 0, this.image.getWidth(), this.image.getHeight()));
-                }
-            }
-            catch (IOException e)
-            {
-                this.image = null;
-                e.printStackTrace();
-            }
+            this.image = image;
+
+            this.initializeBoundingBox(new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight()));
         }
-        
+ 
         @Override
         protected void paint(Graphics2D g2, AffineTransform tx2, Dimension size)
         {
@@ -474,26 +456,8 @@ public class MediaObjectPreviewDialog extends JDialog
         {
             this.setLayout(new BorderLayout());
             
-            JLabel iconLabel = new JLabel(getIconForMediaType(mediaType), JLabel.CENTER);
+            JLabel iconLabel = new JLabel(mediaType != null ? mediaType.getIcon() : null, JLabel.CENTER);
             this.add(iconLabel, BorderLayout.CENTER);
-            
-            JLabel hintLabel = new JLabel("Click to open with system default application", JLabel.CENTER);
-            this.add(hintLabel, BorderLayout.SOUTH);
-        }
-        
-        private ImageIcon getIconForMediaType(MediaType mediaType)
-        {
-            if (mediaType == null)
-                return Resources.MediaIcon;
-            
-            switch (mediaType)
-            {
-                case Picture: return Resources.PictureIcon;
-                case Audio: return Resources.AudioIcon;
-                case Video: return Resources.VideoIcon;
-                case Document: return Resources.DocumentIcon;
-                default: return Resources.MediaIcon;
-            }
         }
     }
 }

@@ -1,10 +1,17 @@
 package iamd.gedcom.datamodel;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+
+import java.awt.image.BufferedImage;
+
 import iamd.gedcom.format.IdentifiedGedComNode;
+import iamd.gedcom.rsrc.Resources;
 
 public class MediaObject extends IdentifiedGedComNode
 {
@@ -58,10 +65,21 @@ public class MediaObject extends IdentifiedGedComNode
             EXTENSION_TO_TYPE.put("xlsx", MediaType.Document);
         }
         
-        // Helper method to get MediaType for a file extension
         public static MediaType getMediaTypeForExtension(String extension)
         {
             return EXTENSION_TO_TYPE.get(extension);
+        }
+
+        public ImageIcon getIcon()
+        {
+            switch (this)
+            {
+                case Picture: return Resources.PictureIcon;
+                case Audio: return Resources.AudioIcon;
+                case Video: return Resources.VideoIcon;
+                case Document: return Resources.DocumentIcon;
+                default: return Resources.MediaIcon;
+            }
         }
     }
     
@@ -118,6 +136,31 @@ public class MediaObject extends IdentifiedGedComNode
         return new File(gedcomDir, this.FILE);
     }
     
+    public BufferedImage getImage()
+    {
+        File mediaFile = this.getMediaFile();
+        if (mediaFile == null || !mediaFile.exists())
+        {
+            return null;
+        }
+        
+        BufferedImage originalImage;
+        try
+        {
+            originalImage = ImageIO.read(mediaFile);
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+        
+        if (originalImage == null)
+        {
+            return null;
+        }
+        return originalImage;
+    }
+
     public String getRelativeFilePath()
     {
         if (this.FILE == null)
