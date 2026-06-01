@@ -37,7 +37,7 @@ import iamd.gedcom.rsrc.Resources;
 import iamd.ui.GraphicsPanel;
 
 @SuppressWarnings("serial")
-public class MediaObjectPreviewDialog extends JDialog
+public class MediaObjectCropDialog extends JDialog
 {
     private final MediaObject mediaObject;
     
@@ -52,9 +52,9 @@ public class MediaObjectPreviewDialog extends JDialog
     
     private boolean cropTool = false;
     
-    public MediaObjectPreviewDialog(JFrame parent, MediaObjectReference mediaObjectRef)
+    public MediaObjectCropDialog(JFrame parent, MediaObjectReference mediaObjectRef)
     {
-        super(parent, "Media Object Preview", true);
+        super(parent, "Media Object Crop", true);
         
         this.mediaObject = mediaObjectRef.mediaObject;
 
@@ -150,9 +150,9 @@ public class MediaObjectPreviewDialog extends JDialog
         }
         mainPanel.add(fieldsPanel, BorderLayout.NORTH);
         
-        // Create preview panel
+        // Create crop panel
         {
-            JPanel previewPanel = new JPanel(new BorderLayout());
+            JPanel cropPanel = new JPanel(new BorderLayout());
             
             if (mediaObject.TYPE == MediaType.Picture)
             {
@@ -181,7 +181,7 @@ public class MediaObjectPreviewDialog extends JDialog
                 toolPanel.add(exploreButton);
                 toolPanel.add(cropImageButton);
                 
-                previewPanel.add(toolPanel, BorderLayout.NORTH);
+                cropPanel.add(toolPanel, BorderLayout.NORTH);
                 
                 // Create image panel
                 this.imagePanel = new CropImagePanel();
@@ -212,14 +212,14 @@ public class MediaObjectPreviewDialog extends JDialog
                 imageContainerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
                 imageContainerPanel.add(this.imagePanel);
 
-                previewPanel.add(imageContainerPanel, BorderLayout.CENTER);
+                cropPanel.add(imageContainerPanel, BorderLayout.CENTER);
                 
             }
             else
             {
                 // Create icon panel for non-image media
                 ImageIconPanel iconPanel = new ImageIconPanel(mediaObject.TYPE);
-                previewPanel.add(iconPanel, BorderLayout.CENTER);
+                cropPanel.add(iconPanel, BorderLayout.CENTER);
                 
                 // Add click to open
                 iconPanel.addMouseListener(new MouseAdapter()
@@ -233,7 +233,7 @@ public class MediaObjectPreviewDialog extends JDialog
                 iconPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
             }
             
-            mainPanel.add(previewPanel, BorderLayout.CENTER);
+            mainPanel.add(cropPanel, BorderLayout.CENTER);
         }
         
         {

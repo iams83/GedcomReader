@@ -428,10 +428,10 @@ public class IndividualEditorPanel extends EditorPanel
             @Override
             public void rowPanelClicked(MediaObjectRowPanel rowPanel)
             {
-                MediaObjectPreviewDialog previewDialog = new MediaObjectPreviewDialog(
+                MediaObjectCropDialog cropDialog = new MediaObjectCropDialog(
                     IndividualEditorPanel.this.frame, rowPanel.getMediaObjectReference());
 
-                previewDialog.setVisible(true);
+                cropDialog.setVisible(true);
                 
                 rowPanel.refresh();
             }

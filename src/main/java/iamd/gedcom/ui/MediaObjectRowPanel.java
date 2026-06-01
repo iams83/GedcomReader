@@ -41,9 +41,10 @@ public class MediaObjectRowPanel extends ObjectRowPanel<MediaObjectRowPanel>
     private ImageIcon getThumbnailIcon(Image image)
     {
         // Create a thumbnail icon (e.g., 100x100 pixels)
-        int thumbnailSize = 100;
-        BufferedImage thumbnail = new BufferedImage(thumbnailSize, thumbnailSize, BufferedImage.TYPE_INT_ARGB);
-        thumbnail.getGraphics().drawImage(image, 0, 0, thumbnailSize, thumbnailSize, null);
+        int thumbnailHeight = 100;
+        int thumbnailWidth = thumbnailHeight * image.getWidth(null) / image.getHeight(null);
+        BufferedImage thumbnail = new BufferedImage(thumbnailWidth, thumbnailHeight, BufferedImage.TYPE_INT_ARGB);
+        thumbnail.getGraphics().drawImage(image, 0, 0, thumbnailWidth, thumbnailHeight, null);
         return new ImageIcon(thumbnail);
     }
 
