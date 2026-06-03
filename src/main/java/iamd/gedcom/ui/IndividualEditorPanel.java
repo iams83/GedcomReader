@@ -8,20 +8,25 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
 import iamd.gedcom.datamodel.Document;
 import iamd.gedcom.datamodel.Family;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.MediaObject;
+import iamd.gedcom.datamodel.MediaObject.MediaType;
 import iamd.gedcom.datamodel.MediaObjectReference;
 import iamd.gedcom.ui.editors.EventEditor;
 import iamd.gedcom.ui.editors.LongTextEditor;
@@ -33,6 +38,7 @@ import iamd.ui.RowPanelList;
 import iamd.ui.RowPanelListListener;
 import iamd.ui.ScrollablePanel;
 import iamd.ui.TextLineEditor;
+import net.iharder.dnd.FileDrop;
 import iamd.ui.ScrollablePanel.ScrollableSizeHint;
 
 @SuppressWarnings("serial")
@@ -423,6 +429,48 @@ public class IndividualEditorPanel extends EditorPanel
                         GedComRowPanelList.getMediaObjectRowPanelList(individual.OBJE, individual, 
                                 Messages.getString("IndividualEditorPanel.mediaobject"), Messages.getString("IndividualEditorPanel.children"), true, true), Messages.getString("IndividualEditorPanel.addMediaObject")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         
+        new FileDrop(mediaPanelList, new FileDrop.Listener()
+        {
+            @Override
+            public void filesDropped(java.io.File[] files)
+            {
+                for (java.io.File file : files)
+                {
+                    MediaObject newMediaObject = new MediaObject(individual.getDocument());
+                    newMediaObject.FILE = file.getAbsolutePath();
+                                
+                    // Extract filename from path
+                    String fileName = file.getName();
+                    int lastSeparator = Math.max(file.getAbsolutePath().lastIndexOf('/'), file.getAbsolutePath().lastIndexOf('\\'));
+                    if (lastSeparator >= 0)
+                    {
+                        fileName = file.getAbsolutePath().substring(lastSeparator + 1);
+                    }
+                    
+                    int lastDot = fileName.lastIndexOf('.');
+                    
+                    // Set title from filename (without extension)
+                    newMediaObject.TITL = (lastDot > 0) ? fileName.substring(0, lastDot) : fileName;
+                    // Set format and type from extension
+                    if (lastDot > 0)
+                    {
+                        String extension = fileName.substring(lastDot + 1).toLowerCase();
+                        
+                        newMediaObject.FORM = extension;
+                        newMediaObject.TYPE = MediaType.getMediaTypeForExtension(extension);
+                    }
+                    
+                    MediaObjectReference newMediaObjectRef = new MediaObjectReference(individual.getDocument(), newMediaObject);
+                    individual.addNewMediaObjectReference(newMediaObjectRef);
+
+                    IndividualEditorPanel.this.setModel(individual);
+
+                    for (GedComModifiedListener listener : IndividualEditorPanel.this.gedcomModifiedListeners)
+                        listener.attributeModified(individual);
+                }
+            }
+        });
+
         mediaPanelList.addRowPanelListListener(new RowPanelListListener<MediaObjectRowPanel>()
         {
             @Override
@@ -476,7 +524,7 @@ public class IndividualEditorPanel extends EditorPanel
                 
                 MediaObjectDialog mediaObjectSelector = new MediaObjectDialog(
                         IndividualEditorPanel.this.frame, 
-                        Messages.getString("IndividualEditorPanel.addmediaobject") + individual.getName() + "...",  //$NON-NLS-1$ //$NON-NLS-2$
+                        Messages.getString("IndividualEditorPanel.addmediaobject") + " - " + individual.getName() + "...",  //$NON-NLS-1$ //$NON-NLS-2$
                         document, true);
                 
                 MediaObject newMediaObject = mediaObjectSelector.getSelectedMediaObject();
@@ -502,5 +550,29 @@ public class IndividualEditorPanel extends EditorPanel
         
         this.invalidate();
         this.updateUI();
+    }
+    
+    public void selectMediaObject(MediaObject mediaObject)
+    {
+        // Find the individual that has a reference to this media object
+        Document document = this.individual.getDocument();
+        for (Individual ind : document.listIndividuals())
+        {
+            for (MediaObjectReference ref : ind.OBJE)
+            {
+                if (ref.mediaObject == mediaObject)
+                {
+                    // Found the individual, set the model and switch to media tab
+                    this.setModel(ind);
+                    
+                    // The media tab selection will show the media objects
+                    return;
+                }
+            }
+        }
+        
+        // If no individual owns this media object, just show it in the current individual
+        // (this shouldn't normally happen)
+        this.setModel(this.individual);
     }
 }

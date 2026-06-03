@@ -4,20 +4,22 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -35,17 +37,16 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 
-import org.w3c.dom.events.MouseEvent;
-
 import iamd.gedcom.datamodel.Document;
+import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.MediaObject;
 import iamd.gedcom.datamodel.MediaObject.MediaType;
+import iamd.gedcom.datamodel.MediaObjectReference;
 import iamd.gedcom.format.GedComContext;
 import iamd.ui.BorderListPanelGenerator;
 import iamd.ui.ComboBoxEditor;
 import iamd.ui.FilePathEditor;
 import iamd.ui.GraphicsPanel;
-import iamd.ui.GraphicsPanel.PanelMovement;
 import iamd.ui.TextLineEditor;
 
 @SuppressWarnings("serial")
@@ -166,7 +167,19 @@ public class MediaObjectDialog extends JDialog
                                 {
                                     if (selectedFile.equals(mediaObject.FILE))
                                     {
-                                        previewImagePanel.setImage(mediaObject.getImage());
+                                        // Find all references to this media object
+                                        TreeMap<Individual, MediaObjectReference> refs = new TreeMap<>();
+                                        for (Individual ind : MediaObjectDialog.this.document.listIndividuals())
+                                        {
+                                            for (MediaObjectReference ref : ind.OBJE)
+                                            {
+                                                if (ref.mediaObject == mediaObject)
+                                                {
+                                                    refs.put(ind, ref);
+                                                }
+                                            }
+                                        }
+                                        previewImagePanel.setImage(mediaObject.getImage(), refs);
                                         return;
                                     }
                                 }
@@ -445,6 +458,7 @@ public class MediaObjectDialog extends JDialog
     private class PreviewImagePanel extends GraphicsPanel
     {
         private BufferedImage image;
+        private TreeMap<Individual, MediaObjectReference> references;
         
         public PreviewImagePanel()
         {
@@ -453,7 +467,13 @@ public class MediaObjectDialog extends JDialog
 
         public void setImage(BufferedImage image)
         {
+            setImage(image, null);
+        }
+        
+        public void setImage(BufferedImage image, TreeMap<Individual, MediaObjectReference> references)
+        {
             this.image = image;
+            this.references = references;
 
             if (image != null)
                 this.initializeBoundingBox(new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight()));
@@ -468,10 +488,53 @@ public class MediaObjectDialog extends JDialog
             g2.fillRect(0, 0, getWidth(), getHeight());
 
             if (this.image != null)
+            {
                 g2.drawImage(this.image, tx2, this);
+                
+                // Draw reference rectangles
+                if (this.references != null)
+                {
+                    int colorIndex = 0;
+                    Color[] colors = { Color.red, Color.blue, Color.green, Color.orange, Color.magenta, Color.cyan };
+                    
+                    for (Map.Entry<Individual, MediaObjectReference> entry : this.references.entrySet())
+                    {
+                        Individual ind = entry.getKey();
+                        MediaObjectReference ref = entry.getValue();
+                        
+                        if (ref.CROP != null)
+                        {
+                            Color color = colors[colorIndex % colors.length];
+                            g2.setColor(color);
+                            g2.setStroke(new java.awt.BasicStroke(3));
+                            
+                            int x = ref.CROP.LEFT;
+                            int y = ref.CROP.TOP;
+                            int w = ref.CROP.WIDTH;
+                            int h = ref.CROP.HEIGHT;
+                            
+                            g2.draw(tx2.createTransformedShape(new Rectangle(x, y, w, h)));
+                            
+                            // Draw label
+                            g2.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
+                            String label = ind.getName() != null ? ind.getName() : "Ref" + colorIndex;
+                            int labelWidth = g2.getFontMetrics().stringWidth(label);
+                            
+                            Point2D labelPos = tx2.transform(new Point2D.Double(x, y), null);
+                            g2.fill(new Rectangle2D.Double(labelPos.getX(), labelPos.getY() - 15, labelWidth + 4, 15));
+                            
+                            g2.setColor(Color.white);
+                            g2.drawString(label, (float) labelPos.getX() + 2, (float) labelPos.getY() - 4);
+                            
+                            colorIndex++;
+                        }
+                    }
+                }
+            }
             else
                 g2.drawString("Unable to load image", 20, 30);
         }
     }
+
 
 }

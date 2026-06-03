@@ -1,11 +1,6 @@
 package iamd.gedcom.datamodel;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 
 import iamd.gedcom.format.GedComNode;
 import iamd.gedcom.format.GedComParseException;

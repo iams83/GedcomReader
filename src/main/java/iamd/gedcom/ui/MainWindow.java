@@ -52,6 +52,7 @@ import iamd.gedcom.datamodel.Family;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.Individual.FamilyChildRelationship;
 import iamd.gedcom.datamodel.Individual.Sex;
+import iamd.gedcom.datamodel.MediaObject;
 import iamd.gedcom.format.GedComNode;
 import iamd.gedcom.format.GedComNode.LocalizedGedComNode;
 import iamd.gedcom.format.IdentifiedGedComNode;
@@ -561,19 +562,29 @@ public class MainWindow extends JFrame
             {
                 try
                 {
-                    String diffExe = "C:\\Program Files (x86)\\WinMerge\\WinMergeU.exe";
+                    String[] diffExeAlternatives = {
+                        "C:\\Program Files\\WinMerge\\WinMergeU.exe",
+                        "C:\\Program Files (x86)\\WinMerge\\WinMergeU.exe"
+                    };
                     
                     File currentFile = MainWindow.this.model.getFile();
                     
+                    File tmpFile = File.createTempFile("gedcom-", ".ged", new File(System.getProperty("java.io.tmpdir")));
+                    
+                    MainWindow.this.saveGedFile(tmpFile);
+
+                    MainWindow.this.model.forceFile(currentFile);
+                    
                     if (currentFile != null)
                     {
-                        File tmpFile = File.createTempFile("gedcom-", ".ged", new File(System.getProperty("java.io.tmpdir")));
-                        
-                        MainWindow.this.saveGedFile(tmpFile);
-    
-                        MainWindow.this.model.forceFile(currentFile);
-                        
-                        Runtime.getRuntime().exec(new String[] { diffExe, MainWindow.this.model.getFile().getPath(), tmpFile.getPath() });
+                        for (String diffExe : diffExeAlternatives)
+                        {
+                            if (new File(diffExe).exists())
+                            {
+                                Runtime.getRuntime().exec(new String[] { diffExe, MainWindow.this.model.getFile().getPath(), tmpFile.getPath() });
+                                return;
+                            }
+                        }
                     }
                 }
                 catch (Throwable e1)
@@ -686,10 +697,30 @@ public class MainWindow extends JFrame
         advancedMenu.add(diffUnsavedChanges);
         advancedMenu.add(cascadeRemoval);
         
+        JMenuItem searchMedia = new JMenuItem(Messages.getString("MainWindow.findmediaobjects")); //$NON-NLS-1$
+        
+        searchMedia.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                MediaObjectDialog mediaObjectSelector = new MediaObjectDialog(
+                        MainWindow.this, 
+                        Messages.getString("MainWindow.findmediaobjects"),  //$NON-NLS-1$
+                        MainWindow.this.model, false);
+                
+                MediaObject mediaObject = mediaObjectSelector.getSelectedMediaObject();
+                
+                if (mediaObject != null)
+                    MainWindow.this.individualEditorPanel.selectMediaObject(mediaObject);
+            }
+        });
+
         JMenu toolMenu = new JMenu(Messages.getString("MainWindow.tools")); //$NON-NLS-1$
         
         toolMenu.add(searchPeople);
         toolMenu.add(searchFamily);
+        toolMenu.add(searchMedia);
         toolMenu.addSeparator();
         toolMenu.add(advancedMenu);
         

@@ -9,6 +9,7 @@ import javax.swing.JLabel;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.MediaObject.MediaType;
 import iamd.gedcom.datamodel.MediaObjectReference;
+import iamd.gedcom.rsrc.Resources;
 import iamd.ui.ObjectRowPanel;
 
 @SuppressWarnings("serial")
@@ -27,11 +28,11 @@ public class MediaObjectRowPanel extends ObjectRowPanel<MediaObjectRowPanel>
         
         String myString = "<html>";
 
-        myString += "<p>" + mediaObjectRef.mediaObject.getDisplayLabel() + "</p>";
+        myString += "<p>" + (mediaObjectRef.mediaObject != null ? mediaObjectRef.mediaObject.getDisplayLabel() : "Not found") + "</p>";
         
         this.setText(myString);
 
-        this.panelIcon = new JLabel(mediaObjectRef.mediaObject.TYPE.getIcon());
+        this.panelIcon = new JLabel(mediaObjectRef.mediaObject != null ? mediaObjectRef.mediaObject.getIconType() : Resources.MediaIcon);
         this.addComponent(this.panelIcon);
 
         this.refresh();
@@ -50,10 +51,12 @@ public class MediaObjectRowPanel extends ObjectRowPanel<MediaObjectRowPanel>
 
     public void refresh()
     {
-        if (mediaObjectRef.mediaObject.TYPE == MediaType.Picture)
+        if (mediaObjectRef.mediaObject == null)
+            this.panelIcon.setIcon(Resources.MediaIcon);
+        else if (mediaObjectRef.mediaObject.TYPE == MediaType.Picture)
             this.panelIcon.setIcon(getThumbnailIcon(mediaObjectRef.getCroppedImage()));
         else
-            this.panelIcon.setIcon(getThumbnailIcon(mediaObjectRef.mediaObject.TYPE.getIcon().getImage()));
+            this.panelIcon.setIcon(getThumbnailIcon(mediaObjectRef.mediaObject.getIconType().getImage()));
     }
 
     public MediaObjectReference getMediaObjectReference()

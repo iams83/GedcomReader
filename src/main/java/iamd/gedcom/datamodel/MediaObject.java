@@ -115,6 +115,12 @@ public class MediaObject extends IdentifiedGedComNode
             return null;
         }
         
+        File mediaFile = new File(this.FILE);
+        if (mediaFile.isAbsolute())
+        {
+            return mediaFile;
+        }
+        
         File gedcomFile = this.getDocument().getFile();
         if (gedcomFile == null)
         {
@@ -127,13 +133,19 @@ public class MediaObject extends IdentifiedGedComNode
             return new File(this.FILE);
         }
         
-        File mediaFile = new File(this.FILE);
-        if (mediaFile.isAbsolute())
-        {
-            return mediaFile;
-        }
-        
         return new File(gedcomDir, this.FILE);
+    }
+
+    public ImageIcon getIconType()
+    {
+        if (this.TYPE != null)
+        {
+            return this.TYPE.getIcon();
+        }
+        else
+        {
+            return Resources.MediaIcon;
+        }
     }
     
     public BufferedImage getImage()
@@ -151,6 +163,8 @@ public class MediaObject extends IdentifiedGedComNode
         }
         catch (IOException e)
         {
+            System.err.println("Failed to load image from file: " + mediaFile.getAbsolutePath());
+            e.printStackTrace(System.err);
             return null;
         }
         
