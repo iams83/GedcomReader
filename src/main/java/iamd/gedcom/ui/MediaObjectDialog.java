@@ -13,7 +13,8 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -24,6 +25,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -36,6 +38,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.JOptionPane;
 
 import iamd.gedcom.datamodel.Document;
 import iamd.gedcom.datamodel.Individual;
@@ -47,6 +50,8 @@ import iamd.ui.BorderListPanelGenerator;
 import iamd.ui.ComboBoxEditor;
 import iamd.ui.FilePathEditor;
 import iamd.ui.GraphicsPanel;
+import iamd.ui.RowPanelList;
+import iamd.ui.RowPanelListListener;
 import iamd.ui.TextLineEditor;
 
 @SuppressWarnings("serial")
@@ -100,12 +105,22 @@ public class MediaObjectDialog extends JDialog
     };
     
     final private JTabbedPane tabbedPane = new JTabbedPane();
+    
+    final private JLabel errorLabel = new JLabel();
+    private JButton createButton;
 
     final private PreviewImagePanel newFilePreviewImagePanel = new PreviewImagePanel();
     
     final private boolean allowNew;
     
     private boolean accepted = false;
+    
+    private Individual selectedIndividual = null;
+    
+    public Individual getSelectedIndividual()
+    {
+        return this.selectedIndividual;
+    }
     
     public MediaObjectDialog(JFrame frame, String title, Document document, boolean allowNew)
     {
@@ -144,8 +159,14 @@ public class MediaObjectDialog extends JDialog
         {
             existingIndividualPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
             
-            PreviewImagePanel previewImagePanel = new PreviewImagePanel();
+            final PreviewImagePanel previewImagePanel = new PreviewImagePanel();
             previewImagePanel.setBorder(new LineBorder(Color.black, 1));
+
+            final RowPanelList<IndividualRowPanel> individualsRowPanelList = new RowPanelList<>(Messages.getString("MediaObjectDialog.individuals"), 
+                                                                                                new ArrayList<IndividualRowPanel>(), null); //$NON-NLS-1$
+            final JSplitPane imagePreviewPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, individualsRowPanelList, previewImagePanel);
+            imagePreviewPanel.setResizeWeight(0.0);
+            imagePreviewPanel.setDividerLocation(200);
 
             this.table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             this.table.setColumnSelectionAllowed(false);
@@ -169,6 +190,7 @@ public class MediaObjectDialog extends JDialog
                                     {
                                         // Find all references to this media object
                                         TreeMap<Individual, MediaObjectReference> refs = new TreeMap<>();
+                                        ArrayList<Individual> individuals = new ArrayList<>();
                                         for (Individual ind : MediaObjectDialog.this.document.listIndividuals())
                                         {
                                             for (MediaObjectReference ref : ind.OBJE)
@@ -176,10 +198,38 @@ public class MediaObjectDialog extends JDialog
                                                 if (ref.mediaObject == mediaObject)
                                                 {
                                                     refs.put(ind, ref);
+                                                    individuals.add(ind);
                                                 }
                                             }
                                         }
                                         previewImagePanel.setImage(mediaObject.getImage(), refs);
+                                        
+                                        // Recreate the individuals panel list with updated individuals
+                                        Collection<IndividualRowPanel> individualRowPanels = GedComRowPanelList.getIndividualRowPanelList(individuals, false, false);
+                                        RowPanelList<IndividualRowPanel> newIndividualsList = new RowPanelList<>(Messages.getString("MediaObjectDialog.individuals"), individualRowPanels, null); //$NON-NLS-1$
+                                        newIndividualsList.addRowPanelListListener(new RowPanelListListener<IndividualRowPanel>()
+                                        {
+                                            @Override
+                                            public void rowPanelClicked(IndividualRowPanel rowPanel)
+                                            {
+                                                MediaObjectDialog.this.selectedIndividual = rowPanel.getIndividual();
+                                                MediaObjectDialog.this.accepted = true;
+                                                MediaObjectDialog.this.setVisible(false);
+                                            }
+                                            
+                                            @Override
+                                            public void rowPanelMovedUp(IndividualRowPanel rowPanel) {}
+                                            
+                                            @Override
+                                            public void rowPanelMovedDown(IndividualRowPanel rowPanel) {}
+                                            
+                                            @Override
+                                            public void rowPanelDeleted(IndividualRowPanel rowPanel) {}
+                                            
+                                            @Override
+                                            public void rowPanelNew() {}
+                                        });
+                                        imagePreviewPanel.setLeftComponent(newIndividualsList);
                                         return;
                                     }
                                 }
@@ -227,7 +277,7 @@ public class MediaObjectDialog extends JDialog
             topPanelGenerator.add(searchPanelGenerator.extractPanel(new JLabel(Messages.getString("SelectorDialog.filter")))); //$NON-NLS-1$
             topPanelGenerator.add(tableScrollPane);
             
-            JPanel topPanel = topPanelGenerator.extractPanel(previewImagePanel);
+            JPanel topPanel = topPanelGenerator.extractPanel(imagePreviewPanel);
             
             JButton selectionButton = new JButton(Messages.getString("SelectorDialog.select")); //$NON-NLS-1$
             selectionButton.addActionListener(acceptActionListener);
@@ -272,19 +322,24 @@ public class MediaObjectDialog extends JDialog
                 globalPanelGenerator.add(this.titl);
                 globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.type")));                 //$NON-NLS-1$
                 globalPanelGenerator.add(this.type);
+                
                 globalPanelGenerator.setBackground(this.getBackground());
-
-                JButton selectionButton = new JButton(Messages.getString("SelectorDialog.create")); //$NON-NLS-1$
-                selectionButton.addActionListener(acceptActionListener);
+                
+                // Add error label
+                this.errorLabel.setForeground(Color.red);
+                this.errorLabel.setVisible(false);
+                
+                this.createButton = new JButton(Messages.getString("SelectorDialog.create")); //$NON-NLS-1$
+                this.createButton.addActionListener(acceptActionListener);
                 
                 JButton cancelButton = new JButton(Messages.getString("SelectorDialog.cancel")); //$NON-NLS-1$
                 cancelButton.addActionListener(rejectActionListener);
                 
                 BorderListPanelGenerator bottomPanelGenerator = new BorderListPanelGenerator(BorderLayout.EAST);
-                bottomPanelGenerator.add(selectionButton);
+                bottomPanelGenerator.add(this.createButton);
                 bottomPanelGenerator.add(cancelButton);
                 
-                JPanel bottomPanel = bottomPanelGenerator.extractPanel();
+                JPanel bottomPanel = bottomPanelGenerator.extractPanel(this.errorLabel);
                 bottomPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
         
                 newIndividualPanel.add(globalPanelGenerator.extractPanel(newFilePreviewImagePanel));
@@ -339,10 +394,59 @@ public class MediaObjectDialog extends JDialog
         }
     }
     
+    private boolean checkForDuplicateFile(String filePath)
+    {
+        for (MediaObject mediaObject : this.document.listMediaObjects())
+        {
+            if (mediaObject.FILE != null && mediaObject.FILE.equals(filePath))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private void updateCreateButtonState(String filePath)
+    {
+        if (filePath == null || filePath.isEmpty())
+        {
+            // No file selected, clear error and enable button
+            this.errorLabel.setVisible(false);
+            if (this.createButton != null)
+            {
+                this.createButton.setEnabled(true);
+            }
+            return;
+        }
+        
+        if (checkForDuplicateFile(filePath))
+        {
+            // Duplicate found, disable button and show error
+            this.errorLabel.setText(Messages.getString("MediaObjectDialog.duplicate_file_error")); //$NON-NLS-1$
+            this.errorLabel.setVisible(true);
+            if (this.createButton != null)
+            {
+                this.createButton.setEnabled(false);
+            }
+        }
+        else
+        {
+            // No duplicate, clear error and enable button
+            this.errorLabel.setVisible(false);
+            if (this.createButton != null)
+            {
+                this.createButton.setEnabled(true);
+            }
+        }
+    }
+    
     private void autofillFromFile(final String filePath)
     {
         if (filePath == null || filePath.isEmpty())
             return;
+        
+        // Check for duplicate before autofilling
+        updateCreateButtonState(filePath);
         
         // Extract filename from path
         String fileName = filePath;
@@ -502,32 +606,38 @@ public class MediaObjectDialog extends JDialog
                         Individual ind = entry.getKey();
                         MediaObjectReference ref = entry.getValue();
                         
+                        Color color = colors[colorIndex % colors.length];
+                        g2.setColor(color);
+                        g2.setStroke(new java.awt.BasicStroke(3));
+                        
+                        int x = 0, y = 0;
+
                         if (ref.CROP != null)
                         {
-                            Color color = colors[colorIndex % colors.length];
-                            g2.setColor(color);
-                            g2.setStroke(new java.awt.BasicStroke(3));
-                            
-                            int x = ref.CROP.LEFT;
-                            int y = ref.CROP.TOP;
+                            x = ref.CROP.LEFT;
+                            y = ref.CROP.TOP;
                             int w = ref.CROP.WIDTH;
                             int h = ref.CROP.HEIGHT;
                             
                             g2.draw(tx2.createTransformedShape(new Rectangle(x, y, w, h)));
-                            
-                            // Draw label
-                            g2.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
-                            String label = ind.getName() != null ? ind.getName() : "Ref" + colorIndex;
-                            int labelWidth = g2.getFontMetrics().stringWidth(label);
-                            
-                            Point2D labelPos = tx2.transform(new Point2D.Double(x, y), null);
-                            g2.fill(new Rectangle2D.Double(labelPos.getX(), labelPos.getY() - 15, labelWidth + 4, 15));
-                            
-                            g2.setColor(Color.white);
-                            g2.drawString(label, (float) labelPos.getX() + 2, (float) labelPos.getY() - 4);
-                            
-                            colorIndex++;
                         }
+                        else
+                        {
+                            g2.draw(tx2.createTransformedShape(new Rectangle(0, 0, this.image.getWidth() - 3, this.image.getHeight() - 3)));
+                        }
+                        
+                        // Draw label
+                        g2.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
+                        String label = ind.getName() != null ? ind.getName() : "Ref" + colorIndex;
+                        int labelWidth = g2.getFontMetrics().stringWidth(label);
+                        
+                        Point2D labelPos = tx2.transform(new Point2D.Double(x, y), null);
+                        g2.fill(new Rectangle2D.Double(labelPos.getX(), labelPos.getY() - 15, labelWidth + 4, 15));
+                        
+                        g2.setColor(Color.white);
+                        g2.drawString(label, (float) labelPos.getX() + 2, (float) labelPos.getY() - 4);
+                        
+                        colorIndex++;
                     }
                 }
             }
