@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import java.awt.image.BufferedImage;
@@ -108,6 +107,11 @@ public class MediaObject extends IdentifiedGedComNode
         return "MEDIA" + hashCode();
     }
 
+    public void remove()
+    {
+        this.getDocument().removeMediaObject(this);
+    }
+
     public File getMediaFile()
     {
         if (this.FILE == null)
@@ -155,11 +159,15 @@ public class MediaObject extends IdentifiedGedComNode
         {
             return null;
         }
-        
-        BufferedImage originalImage;
+
         try
         {
-            originalImage = ImageIO.read(mediaFile);
+            // Use ExifOrientationUtil.read so the image is rotated /
+            // mirrored according to its EXIF orientation tag. Many
+            // photos taken on phones and cameras have a non-default
+            // orientation tag and would otherwise appear rotated in
+            // the application.
+            return ExifOrientationUtil.read(mediaFile);
         }
         catch (IOException e)
         {
@@ -167,12 +175,6 @@ public class MediaObject extends IdentifiedGedComNode
             e.printStackTrace(System.err);
             return null;
         }
-        
-        if (originalImage == null)
-        {
-            return null;
-        }
-        return originalImage;
     }
 
     public String getRelativeFilePath()

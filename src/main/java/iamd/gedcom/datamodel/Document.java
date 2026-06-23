@@ -171,6 +171,42 @@ public class Document extends GedComContext
         }
     }
 
+    /**
+     * Removes a media object from the document. Also removes any
+     * MediaObjectReference pointing to this media object from every
+     * individual's OBJE list. No-op if the media object is null.
+     */
+    public void removeMediaObject(MediaObject mediaObject)
+    {
+        if (mediaObject == null)
+            return;
+        
+        // Remove all references to this media object from every individual
+        for (Individual individual : new ArrayList<Individual>(this.INDI))
+        {
+            ArrayList<MediaObjectReference> refsToRemove = new ArrayList<MediaObjectReference>();
+            for (MediaObjectReference ref : individual.OBJE)
+            {
+                if (ref.mediaObject == mediaObject)
+                    refsToRemove.add(ref);
+            }
+            for (MediaObjectReference ref : refsToRemove)
+                individual.removeMediaObject(ref);
+        }
+        
+        // Remove the media object from the idMap and from the OBJE list
+        for (Map.Entry<String, IdentifiedGedComNode> entry : 
+            new TreeMap<String,IdentifiedGedComNode>(this.idMap).entrySet())
+        {
+            if (entry.getValue() == mediaObject)
+            {
+                this.idMap.remove(entry.getKey());
+                this.OBJE.remove(mediaObject);
+                break;
+            }
+        }
+    }
+
     public void swapFamilies(Family family1, Family family2)
     {
         int indexOfFamily1 = this.FAM.indexOf(family1);

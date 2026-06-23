@@ -53,6 +53,7 @@ import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.Individual.FamilyChildRelationship;
 import iamd.gedcom.datamodel.Individual.Sex;
 import iamd.gedcom.datamodel.MediaObject;
+import iamd.gedcom.datamodel.MediaObjectReference;
 import iamd.gedcom.format.GedComNode;
 import iamd.gedcom.format.GedComNode.LocalizedGedComNode;
 import iamd.gedcom.format.IdentifiedGedComNode;
@@ -67,29 +68,33 @@ public class MainWindow extends JFrame
 {
     public static final String APP_NAME = Messages.getString("MainWindow.title"); //$NON-NLS-1$
     
-    public static final String VERSION = "1.0.2"; //$NON-NLS-1$
+    public static final String VERSION = "1.1.0"; //$NON-NLS-1$
 
     public static final String TITLE = APP_NAME + " " + VERSION; //$NON-NLS-1$
     
     enum LeftPanelCard
     {
-        FAMILY_PANEL, INDIVIDUAL_PANEL
+        FAMILY_PANEL, INDIVIDUAL_PANEL, MEDIA_OBJECT_PANEL
     }
         
     enum MainPanelCard
     {
-        GRAPH_PANEL, CHART_PANEL
+        GRAPH_PANEL, CHART_PANEL, MEDIA_OBJECT_PANEL
     }
 
-    final private GedComChartPanel chartPanel = new GedComChartPanel();
+    final private ChartPanelWithToolbar chartPanel = new ChartPanelWithToolbar();
     
-    final private GedComGraph graphPanel = new GedComGraph();
+    final private GraphPanelWithToolbar graphPanel = new GraphPanelWithToolbar();
     
     final private MetadataEditorDialog  metadataEditorDialog  = new MetadataEditorDialog(this);
 
     final private IndividualEditorPanel individualEditorPanel = new IndividualEditorPanel(this);
     
     final private FamilyEditorPanel     familyEditorPanel     = new FamilyEditorPanel(this);
+    
+    final private MediaObjectEditorPanel mediaObjectEditorPanel = new MediaObjectEditorPanel(this);
+    
+    final private MediaObjectPanelWithToolbar mediaObjectDisplayPanel = new MediaObjectPanelWithToolbar();
     
     final private CardLayout leftCardLayout = new CardLayout();
     
@@ -114,6 +119,12 @@ public class MainWindow extends JFrame
 
     private MainPanelCard selectedDiagram = MainPanelCard.CHART_PANEL;
     
+    // Diagram menu items (kept as fields so the toolbar can sync with them)
+    private JRadioButtonMenuItem ascendentChartMenuItem;
+    private JRadioButtonMenuItem descendentChartMenuItem;
+    private JRadioButtonMenuItem twoWayChartMenuItem;
+    private JRadioButtonMenuItem dynamicGraphMenuItem;
+    
     public MainWindow()
     {        
         this.setTitle(TITLE);
@@ -123,9 +134,11 @@ public class MainWindow extends JFrame
 
         this.leftStackPanel.add(this.individualEditorPanel, LeftPanelCard.INDIVIDUAL_PANEL.name());
         this.leftStackPanel.add(this.familyEditorPanel,     LeftPanelCard.FAMILY_PANEL.name());
+        this.leftStackPanel.add(this.mediaObjectEditorPanel, LeftPanelCard.MEDIA_OBJECT_PANEL.name());
         
         this.mainStackPanel.add(this.chartPanel, MainPanelCard.CHART_PANEL.name());
         this.mainStackPanel.add(this.graphPanel, MainPanelCard.GRAPH_PANEL.name());
+        this.mainStackPanel.add(this.mediaObjectDisplayPanel, MainPanelCard.MEDIA_OBJECT_PANEL.name());
         
         this.add(new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, this.leftStackPanel, this.mainStackPanel));
         this.add(this.statusLine, BorderLayout.SOUTH);
@@ -183,6 +196,64 @@ public class MainWindow extends JFrame
         this.individualEditorPanel.addFamilySelectionListener(familySelectionListener);
         
         this.familyEditorPanel    .addFamilySelectionListener(familySelectionListener);
+        
+        this.mediaObjectEditorPanel.addFamilySelectionListener(familySelectionListener);
+        
+        this.mediaObjectDisplayPanel.setMediaObjectDisplayListener(new MediaObjectDisplayPanel.MediaObjectDisplayListener()
+        {
+            @Override
+            public void rectangleClicked(Individual individual, MediaObjectReference ref)
+            {
+                MainWindow.this.selectIndividual(individual);
+            }
+        });
+        
+        // Register chart toolbar listener to handle the "switch to graph" action
+        // and to sync the Diagram menu when a chart type is selected via the toolbar.
+        this.chartPanel.setChartToolbarListener(new ChartPanelWithToolbar.ChartToolbarListener()
+        {
+            @Override
+            public void onSwitchToGraph()
+            {
+                MainWindow.this.showGraphPanel();
+            }
+            
+            @Override
+            public void onChartTypeSelectedFromToolbar(GedComChartPanel.ChartType type)
+            {
+                // Sync the menu with the toolbar selection
+                if (MainWindow.this.ascendentChartMenuItem != null)
+                    MainWindow.this.ascendentChartMenuItem.setSelected(type == GedComChartPanel.ChartType.ParentChart);
+                if (MainWindow.this.descendentChartMenuItem != null)
+                    MainWindow.this.descendentChartMenuItem.setSelected(type == GedComChartPanel.ChartType.DescendantChart);
+                if (MainWindow.this.twoWayChartMenuItem != null)
+                    MainWindow.this.twoWayChartMenuItem.setSelected(type == GedComChartPanel.ChartType.TwoWayChart);
+                if (MainWindow.this.dynamicGraphMenuItem != null)
+                    MainWindow.this.dynamicGraphMenuItem.setSelected(false);
+                
+                // Make sure the chart panel is showing
+                MainWindow.this.selectedDiagram = MainPanelCard.CHART_PANEL;
+                MainWindow.this.mainCardLayout.show(MainWindow.this.mainStackPanel, MainPanelCard.CHART_PANEL.name());
+            }
+        });
+        
+        // Register graph toolbar listener to handle chart type selections
+        // (switches to the chart view) and the "switch to graph" action.
+        this.graphPanel.setGraphToolbarListener(new GraphPanelWithToolbar.GraphToolbarListener()
+        {
+            @Override
+            public void onSwitchToGraph()
+            {
+                MainWindow.this.showGraphPanel();
+            }
+            
+            @Override
+            public void onChartTypeSelectedFromToolbar(GedComChartPanel.ChartType type)
+            {
+                // Switch to the chart panel with the selected type
+                MainWindow.this.showChartPanel(type);
+            }
+        });
         
         this.addWindowListener(new WindowAdapter()
         {
@@ -272,6 +343,20 @@ public class MainWindow extends JFrame
         
         this.individualEditorPanel.addAttributeEditorListener(attributeEditorListener);
         this.familyEditorPanel    .addAttributeEditorListener(attributeEditorListener);
+        this.mediaObjectEditorPanel.addAttributeEditorListener(attributeEditorListener);
+        
+        // When an individual is unlinked from / linked to a media object via the
+        // editor panel, refresh the media object's display panel so that the
+        // rectangles drawn on top of the image are kept in sync.
+        this.mediaObjectEditorPanel.addMediaObjectChangedListener(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                MainWindow.this.mediaObjectDisplayPanel.setModel(
+                        MainWindow.this.mediaObjectEditorPanel.getMediaObject());
+            }
+        });
         
         JMenuBar menubar = new JMenuBar();
         
@@ -707,12 +792,12 @@ public class MainWindow extends JFrame
                 MediaObjectDialog mediaObjectSelector = new MediaObjectDialog(
                         MainWindow.this, 
                         Messages.getString("MainWindow.findmediaobjects"),  //$NON-NLS-1$
-                        MainWindow.this.model, false);
+                        MainWindow.this.model, true);
                 
                 MediaObject mediaObject = mediaObjectSelector.getSelectedMediaObject();
                 
                 if (mediaObject != null)
-                    MainWindow.this.individualEditorPanel.selectMediaObject(mediaObject);
+                    MainWindow.this.selectMediaObject(mediaObject);
             }
         });
 
@@ -729,65 +814,55 @@ public class MainWindow extends JFrame
     
     private JMenu createDiagramMenu()
     {
-        JRadioButtonMenuItem ascendentChart  = new JRadioButtonMenuItem(Messages.getString("MainWindow.ascendingdiagram"),  //$NON-NLS-1$
+        this.ascendentChartMenuItem  = new JRadioButtonMenuItem(Messages.getString("MainWindow.ascendingdiagram"),  //$NON-NLS-1$
                 this.chartPanel.getType() == GedComChartPanel.ChartType.ParentChart);
-        JRadioButtonMenuItem descendentChart = new JRadioButtonMenuItem(Messages.getString("MainWindow.descendingdiagram"),  //$NON-NLS-1$
+        this.descendentChartMenuItem = new JRadioButtonMenuItem(Messages.getString("MainWindow.descendingdiagram"),  //$NON-NLS-1$
                 this.chartPanel.getType() == GedComChartPanel.ChartType.DescendantChart);
-        JRadioButtonMenuItem twoWayChart     = new JRadioButtonMenuItem(Messages.getString("MainWindow.twowaysdiagram"),  //$NON-NLS-1$
+        this.twoWayChartMenuItem     = new JRadioButtonMenuItem(Messages.getString("MainWindow.twowaysdiagram"),  //$NON-NLS-1$
                 this.chartPanel.getType() == GedComChartPanel.ChartType.TwoWayChart);
-        JRadioButtonMenuItem dynamicGraph    = new JRadioButtonMenuItem(Messages.getString("MainWindow.treegraph"),  //$NON-NLS-1$
-                false);
+        this.dynamicGraphMenuItem    = new JRadioButtonMenuItem(Messages.getString("MainWindow.treegraph"),  //$NON-NLS-1$
+                this.selectedDiagram == MainPanelCard.GRAPH_PANEL);
         
         ButtonGroup buttonGroup = new ButtonGroup();
         
-        buttonGroup.add(ascendentChart);
-        buttonGroup.add(descendentChart);
-        buttonGroup.add(twoWayChart);
-        buttonGroup.add(dynamicGraph);
+        buttonGroup.add(this.ascendentChartMenuItem);
+        buttonGroup.add(this.descendentChartMenuItem);
+        buttonGroup.add(this.twoWayChartMenuItem);
+        buttonGroup.add(this.dynamicGraphMenuItem);
         
-        ascendentChart.addActionListener(new ActionListener()
+        this.ascendentChartMenuItem.addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                MainWindow.this.mainCardLayout.show(MainWindow.this.mainStackPanel, 
-                        (MainWindow.this.selectedDiagram = MainPanelCard.CHART_PANEL).name());
-                
-                MainWindow.this.chartPanel.setChartType(GedComChartPanel.ChartType.ParentChart);
+                MainWindow.this.showChartPanel(GedComChartPanel.ChartType.ParentChart);
             }
         });
 
-        descendentChart.addActionListener(new ActionListener()
+        this.descendentChartMenuItem.addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                MainWindow.this.mainCardLayout.show(MainWindow.this.mainStackPanel, 
-                        (MainWindow.this.selectedDiagram = MainPanelCard.CHART_PANEL).name());
-                
-                MainWindow.this.chartPanel.setChartType(GedComChartPanel.ChartType.DescendantChart);
+                MainWindow.this.showChartPanel(GedComChartPanel.ChartType.DescendantChart);
             }
         });
         
-        twoWayChart.addActionListener(new ActionListener()
+        this.twoWayChartMenuItem.addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                MainWindow.this.mainCardLayout.show(MainWindow.this.mainStackPanel,  
-                        (MainWindow.this.selectedDiagram = MainPanelCard.CHART_PANEL).name());
-                
-                MainWindow.this.chartPanel.setChartType(GedComChartPanel.ChartType.TwoWayChart);
+                MainWindow.this.showChartPanel(GedComChartPanel.ChartType.TwoWayChart);
             }
         });
         
-        dynamicGraph.addActionListener(new ActionListener()
+        this.dynamicGraphMenuItem.addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                MainWindow.this.mainCardLayout.show(MainWindow.this.mainStackPanel, 
-                        (MainWindow.this.selectedDiagram = MainPanelCard.GRAPH_PANEL).name());
+                MainWindow.this.showGraphPanel();
             }
         });
         
@@ -813,14 +888,59 @@ public class MainWindow extends JFrame
         
         JMenu chartMenu = new JMenu(Messages.getString("MainWindow.diagram")); //$NON-NLS-1$
         
-        chartMenu.add(descendentChart);
-        chartMenu.add(ascendentChart);
-        chartMenu.add(twoWayChart);
-        chartMenu.add(dynamicGraph);
+        chartMenu.add(this.descendentChartMenuItem);
+        chartMenu.add(this.ascendentChartMenuItem);
+        chartMenu.add(this.twoWayChartMenuItem);
+        chartMenu.add(this.dynamicGraphMenuItem);
         chartMenu.addSeparator();
         chartMenu.add(font);
         
         return chartMenu;
+    }
+    
+    /**
+     * Shows the chart panel with the specified chart type. Updates both
+     * the chart panel and the Diagram menu selection.
+     */
+    private void showChartPanel(GedComChartPanel.ChartType type)
+    {
+        this.mainCardLayout.show(this.mainStackPanel, 
+                (this.selectedDiagram = MainPanelCard.CHART_PANEL).name());
+        
+        this.chartPanel.setChartType(type);
+        
+        // Sync the menu selection with the chart type
+        if (this.ascendentChartMenuItem != null)
+            this.ascendentChartMenuItem.setSelected(type == GedComChartPanel.ChartType.ParentChart);
+        if (this.descendentChartMenuItem != null)
+            this.descendentChartMenuItem.setSelected(type == GedComChartPanel.ChartType.DescendantChart);
+        if (this.twoWayChartMenuItem != null)
+            this.twoWayChartMenuItem.setSelected(type == GedComChartPanel.ChartType.TwoWayChart);
+        if (this.dynamicGraphMenuItem != null)
+            this.dynamicGraphMenuItem.setSelected(false);
+    }
+    
+    /**
+     * Shows the dynamic graph panel. Updates the Diagram menu selection.
+     */
+    private void showGraphPanel()
+    {
+        this.mainCardLayout.show(this.mainStackPanel, 
+                (this.selectedDiagram = MainPanelCard.GRAPH_PANEL).name());
+        
+        // Sync the menu selection
+        if (this.ascendentChartMenuItem != null)
+            this.ascendentChartMenuItem.setSelected(false);
+        if (this.descendentChartMenuItem != null)
+            this.descendentChartMenuItem.setSelected(false);
+        if (this.twoWayChartMenuItem != null)
+            this.twoWayChartMenuItem.setSelected(false);
+        if (this.dynamicGraphMenuItem != null)
+            this.dynamicGraphMenuItem.setSelected(true);
+        
+        // Unselect all chart toolbar buttons (the graph button is handled
+        // by the chartToolbarListener in the constructor)
+        this.chartPanel.selectGraphButton(true);
     }
     
     public JMenu createHelpMenu()
@@ -923,6 +1043,9 @@ public class MainWindow extends JFrame
         
         this.leftCardLayout.show(this.leftStackPanel, LeftPanelCard.INDIVIDUAL_PANEL.name());
         
+        this.mainCardLayout.show(this.mainStackPanel, 
+                (this.selectedDiagram = MainPanelCard.CHART_PANEL).name());
+        
         this.individualEditorPanel.setModel(individual);
         
         if (individual != null)
@@ -956,6 +1079,17 @@ public class MainWindow extends JFrame
             if (!id.equals("@0@")) //$NON-NLS-1$
                 this.prefs.putCurrentIndividual(id);
         }
+    }
+
+    public void selectMediaObject(MediaObject mediaObject)
+    {
+        this.mediaObjectDisplayPanel.setModel(mediaObject);
+        
+        this.mediaObjectEditorPanel.setModel(mediaObject);
+        
+        this.mainCardLayout.show(this.mainStackPanel, MainPanelCard.MEDIA_OBJECT_PANEL.name());
+        
+        this.leftCardLayout.show(this.leftStackPanel, LeftPanelCard.MEDIA_OBJECT_PANEL.name());
     }
 
     public Document newGedFile()

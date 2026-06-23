@@ -41,6 +41,9 @@ public class MediaObjectRowPanel extends ObjectRowPanel<MediaObjectRowPanel>
 
     private ImageIcon getThumbnailIcon(Image image)
     {
+        if (image == null)
+            return Resources.MediaIcon;
+
         // Create a thumbnail icon (e.g., 100x100 pixels)
         int thumbnailHeight = 100;
         int thumbnailWidth = thumbnailHeight * image.getWidth(null) / image.getHeight(null);

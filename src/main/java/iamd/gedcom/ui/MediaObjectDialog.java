@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
 
-import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -41,6 +40,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.JOptionPane;
 
 import iamd.gedcom.datamodel.Document;
+import iamd.gedcom.datamodel.ExifOrientationUtil;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.MediaObject;
 import iamd.gedcom.datamodel.MediaObject.MediaType;
@@ -466,7 +466,7 @@ public class MediaObjectDialog extends JDialog
 
             try
             {
-                BufferedImage image = ImageIO.read(new File(filePath));
+                BufferedImage image = ExifOrientationUtil.read(new File(filePath));
 
                 this.newFilePreviewImagePanel.setImage(image);
             }

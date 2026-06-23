@@ -476,12 +476,8 @@ public class IndividualEditorPanel extends EditorPanel
             @Override
             public void rowPanelClicked(MediaObjectRowPanel rowPanel)
             {
-                MediaObjectCropDialog cropDialog = new MediaObjectCropDialog(
-                    IndividualEditorPanel.this.frame, rowPanel.getMediaObjectReference());
-
-                cropDialog.setVisible(true);
-                
-                rowPanel.refresh();
+                // Open the media object in the dedicated media view panel
+                IndividualEditorPanel.this.selectMediaObject(rowPanel.getMediaObjectReference().mediaObject);
             }
 
             @Override
@@ -554,25 +550,8 @@ public class IndividualEditorPanel extends EditorPanel
     
     public void selectMediaObject(MediaObject mediaObject)
     {
-        // Find the individual that has a reference to this media object
-        Document document = this.individual.getDocument();
-        for (Individual ind : document.listIndividuals())
-        {
-            for (MediaObjectReference ref : ind.OBJE)
-            {
-                if (ref.mediaObject == mediaObject)
-                {
-                    // Found the individual, set the model and switch to media tab
-                    this.setModel(ind);
-                    
-                    // The media tab selection will show the media objects
-                    return;
-                }
-            }
-        }
-        
-        // If no individual owns this media object, just show it in the current individual
-        // (this shouldn't normally happen)
-        this.setModel(this.individual);
+        // Delegate to MainWindow which has the dedicated MediaObject panels
+        MainWindow mainWindow = (MainWindow) this.frame;
+        mainWindow.selectMediaObject(mediaObject);
     }
 }
