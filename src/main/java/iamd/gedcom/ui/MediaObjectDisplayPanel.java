@@ -1,11 +1,13 @@
-package iamd.gedcom.ui;
+﻿package iamd.gedcom.ui;
 
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -25,6 +27,10 @@ import iamd.gedcom.datamodel.MediaObject;
 import iamd.gedcom.datamodel.MediaObjectReference;
 import iamd.gedcom.ui.MediaObjectPanelWithToolbar.ToolMode;
 import iamd.ui.GraphicsPanel;
+import iamd.gedcom.ui.labeling.LabelLayoutEngine;
+import iamd.gedcom.ui.labeling.LabelMetrics;
+import iamd.gedcom.ui.labeling.LabeledItem;
+import iamd.gedcom.ui.labeling.PlacedLabel;
 
 @SuppressWarnings("serial")
 public class MediaObjectDisplayPanel extends GraphicsPanel
@@ -37,6 +43,7 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
     private MediaObject mediaObject;
     private BufferedImage image;
     private List<IndividualReference> individualReferences = new ArrayList<>();
+    private List<ReferenceLabelItem> labelItems = new ArrayList<>();
     private MediaObjectDisplayListener listener;
     
     // Tool mode and crop state
@@ -88,10 +95,7 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
     // LABEL_BACKGROUND_PADDING/2 pixels of padding on each side, the text
     // starts at LABEL_INNER_MARGIN + LABEL_BACKGROUND_PADDING/2 from the
     // rectangle edge.
-    private static final int LABEL_BACKGROUND_PADDING = 4;
-    private static final int LABEL_INNER_MARGIN = 0;
-    private static final int LABEL_OFFSET_X = 0;
-    private static final int LABEL_OUTER_BACKGROUND_INSET = 0;
+    private static final int LABEL_BACKGROUND_PADDING = 6;
     
     // Position and color of placeholder text shown when no image is available.
     private static final int PLACEHOLDER_TEXT_X = 20;
@@ -107,10 +111,71 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
     
     // Default size (in pixels) used when a media object has no image to size
     // the placeholder against.
-    private static final double DEFAULT_MEDIA_WIDTH = 400;
-    private static final double DEFAULT_MEDIA_HEIGHT = 300;
+    private static final double DEFAULT_MEDIA_WIDTH  = 128;
+    private static final double DEFAULT_MEDIA_HEIGHT = 128;
     
-    private static class IndividualReference
+    /**
+     * Stateless layout engine used to keep labels from overlapping.
+     * Re-evaluated on every paint so it stays correct under zoom and pan.
+     */
+    private final LabelLayoutEngine labelLayoutEngine =
+            new LabelLayoutEngine(new PanelLabelMetrics());
+
+    /**
+     * Adapts the panel's current font metrics to the layout engine.
+     * Implemented as an inner class so it can read getFont() live at
+     * layout time (the panel's font may be changed later).
+     */
+    private class PanelLabelMetrics implements LabelMetrics
+    {
+        @Override
+        public Rectangle measure(String text)
+        {
+            FontMetrics fm = getFontMetrics(LABEL_FONT);
+            int textWidth = fm.stringWidth(text);
+            int textAscent = fm.getAscent();
+            int textDescent = fm.getDescent();
+            int bgWidth = textWidth + LABEL_BACKGROUND_PADDING;
+            int bgHeight = textAscent + textDescent + LABEL_BACKGROUND_PADDING;
+            return new Rectangle(0, 0, bgWidth, bgHeight);
+        }
+
+        @Override
+        public int textX(Rectangle background)
+        {
+            return background.x + LABEL_BACKGROUND_PADDING / 2;
+        }
+
+        @Override
+        public int textY(Rectangle background)
+        {
+            FontMetrics fm = getFontMetrics(LABEL_FONT);
+            return background.y + LABEL_BACKGROUND_PADDING / 2 + fm.getAscent();
+        }
+    }
+
+    /**
+     * Adapts an IndividualReference plus its scene-space rectangle to the
+     * engine's LabeledItem contract. Created fresh for each paint because
+     * the rectangle can change between frames (zoom, pan, new CROP).
+     */
+    private static class ReferenceLabelItem implements LabeledItem
+    {
+        final IndividualReference reference;
+        final Rectangle2D.Double sceneRect;
+
+        ReferenceLabelItem(IndividualReference reference, Rectangle2D.Double sceneRect)
+        {
+            this.reference = reference;
+            this.sceneRect = sceneRect;
+        }
+
+        @Override public String getLabelText() { return this.reference.individual.getName(); }
+        @Override public double getAnchorX() { return this.sceneRect.getX(); }
+        @Override public double getAnchorY() { return this.sceneRect.getY(); }
+    }
+
+        private static class IndividualReference
     {
         public final Individual individual;
         public final MediaObjectReference ref;
@@ -564,7 +629,7 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
                 int iconHeight = icon.getIconHeight();
                 
                 AffineTransform iconTx = new AffineTransform(tx2);
-                iconTx.translate(-iconWidth / 2.0, -iconHeight / 2.0);
+                iconTx.translate((DEFAULT_MEDIA_WIDTH - iconWidth) / 2.0, (DEFAULT_MEDIA_HEIGHT - iconHeight) / 2.0);
                 
                 g2.drawImage(icon.getImage(), iconTx, this);
             }
@@ -582,6 +647,9 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
             return;
         }
         
+        java.awt.Font labelOriginalFont = g2.getFont();
+        g2.setFont(LABEL_FONT);
+        
         // Draw rectangles for all individuals
         for (IndividualReference ir : this.individualReferences)
         {
@@ -597,72 +665,36 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
             g2.setStroke(new java.awt.BasicStroke(isActive ? ACTIVE_BORDER_STROKE_WIDTH : INACTIVE_BORDER_STROKE_WIDTH));
             g2.draw(transformedRect);
             
-            // Draw label
+            // Defer drawing until the layout engine has resolved
+            // collisions across every collected label.
             String label = ir.individual.getName();
             if (label != null && !label.isEmpty())
             {
-                java.awt.Font originalFont = g2.getFont();
-                g2.setFont(LABEL_FONT);
-                
-                java.awt.FontMetrics fm = g2.getFontMetrics();
-                int textWidth = fm.stringWidth(label);
-                int textAscent = fm.getAscent();
-                int textDescent = fm.getDescent();
-                int bgWidth = textWidth + LABEL_BACKGROUND_PADDING;
-                int bgHeight = textAscent + textDescent + LABEL_BACKGROUND_PADDING;
-                
-                // Position label at top-left of rectangle (in screen coordinates)
-                Point2D labelPos = tx2.transform(
-                    new Point2D.Double(rect.getX(), rect.getY()), null);
-                
-                // When the rectangle's top-left point is at (0, 0) — either
-                // because there is no CROP (in which case getRectangleForReference
-                // returns the full image bounds at (0, 0)) or because the
-                // CROP rectangle explicitly starts at (0, 0) — place the label
-                // inside the rectangle; otherwise place it outside (above).
-                Crop refCrop = ir.ref.CROP;
-                boolean labelInside = (refCrop == null
-                    || (refCrop.LEFT == 0 && refCrop.TOP == 0));
-                
-                // X positioning is the same regardless of inside/outside:
-                // the background starts at the rectangle's left edge and the
-                // text starts half the background padding inside it.
-                int bgX = (int)labelPos.getX() + LABEL_OFFSET_X;
-                int textX = bgX + LABEL_BACKGROUND_PADDING / 2;
-                
-                // Y positioning differs: the text is always vertically centered
-                // in its background (ascent + descent + padding). The whole
-                // label is shifted to be inside or outside the rectangle.
-                int bgY;
-                if (labelInside)
-                {
-                    // Background sits just below the corner; the text is
-                    // centered inside the background using the ascent.
-                    bgY = (int)labelPos.getY() + LABEL_INNER_MARGIN;
-                }
-                else
-                {
-                    // Anchor the background's bottom edge LABEL_OUTER_BACKGROUND_INSET
-                    // pixels above the corner (so the label visibly tucks just
-                    // above the rectangle). The text is then centered inside.
-                    bgY = (int)labelPos.getY() - LABEL_OUTER_BACKGROUND_INSET - bgHeight;
-                }
-                int textY = bgY + LABEL_BACKGROUND_PADDING / 2 + textAscent;
-                
-                // Draw background for label (opaque rectangle color — colors are
-                // reversed relative to the rectangle outline so the label is
-                // always readable).
-                g2.setColor(new Color(RECTANGLE_BORDER_COLORS[ir.colorIndex]));
-                g2.fillRect(bgX, bgY, bgWidth, bgHeight);
-                
-                // Draw label text in opaque white.
-                g2.setColor(Color.WHITE);
-                g2.drawString(label, textX, textY);
-                
-                g2.setFont(originalFont);
+                this.labelItems.add(new ReferenceLabelItem(ir, rect));
             }
         }
         
+        
+        // Resolve label collisions across all individuals via the layout
+        // engine, then draw the resulting placements. The engine anchors
+        // each label to the scene-space top-left of its rectangle; if two
+        // labels overlap, the second one is nudged to the right.
+
+        List<PlacedLabel<ReferenceLabelItem>> placedLabels =
+            this.labelLayoutEngine.layout(this.labelItems, tx2);
+        this.labelItems.clear();
+        for (PlacedLabel<ReferenceLabelItem> placed : placedLabels)
+        {
+            IndividualReference ir = placed.getItem().reference;
+            Rectangle bg = placed.getPlacement().getBounds();
+            g2.setColor(new Color(RECTANGLE_BORDER_COLORS[ir.colorIndex]));
+            g2.fillRect(bg.x, bg.y, bg.width, bg.height);
+            g2.setColor(Color.WHITE);
+            g2.drawString(ir.individual.getName(),
+                          placed.getPlacement().getTextX(),
+                          placed.getPlacement().getTextY());
+        }
+        g2.setFont(labelOriginalFont);
         // Draw the in-progress crop rectangle if currently dragging.
         // Use the active reference's color so it matches the individual being cropped.
         if (this.toolMode == ToolMode.CROP && this.cropDragging 
