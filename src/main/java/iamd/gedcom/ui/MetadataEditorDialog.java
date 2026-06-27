@@ -63,7 +63,7 @@ public class MetadataEditorDialog extends JDialog
         
         this.setTitle(MainWindow.TITLE);
         this.setModal(true);
-        this.setSize(new Dimension(300, 600));
+        this.setSize(new Dimension(600, 1200));
         this.setLayout(new BorderLayout());
 
         BorderListPanelGenerator gedFormatPanel = new BorderListPanelGenerator(BorderLayout.NORTH);

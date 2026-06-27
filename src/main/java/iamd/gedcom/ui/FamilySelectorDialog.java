@@ -95,7 +95,7 @@ public class FamilySelectorDialog extends JDialog
         this.setModal(true);
         
         this.setLocationByPlatform(true);
-        this.setSize(600, 400);
+        this.setSize(1200, 800);
 
         ActionListener acceptActionListener = new ActionListener()
         {

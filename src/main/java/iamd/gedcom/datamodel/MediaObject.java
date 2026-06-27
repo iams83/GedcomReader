@@ -69,6 +69,18 @@ public class MediaObject extends IdentifiedGedComNode
             return EXTENSION_TO_TYPE.get(extension);
         }
 
+        /**
+         * Return a sorted array of every file extension that
+         * {@link #getMediaTypeForExtension(String)} can classify. Useful for
+         * configuring file pickers that should only offer known media types.
+         */
+        public static String[] collectSupportedExtensions()
+        {
+            String[] extensions = EXTENSION_TO_TYPE.keySet().toArray(new String[0]);
+            java.util.Arrays.sort(extensions);
+            return extensions;
+        }
+
         public ImageIcon getIcon()
         {
             switch (this)
@@ -237,12 +249,12 @@ public class MediaObject extends IdentifiedGedComNode
     public String getDisplayLabel()
     {
         String result = "";
-        
+
         if (this.TITL != null)
         {
             result += this.TITL;
         }
-        
+
         String relativePath = this.getRelativeFilePath();
         if (relativePath != null)
         {
@@ -250,15 +262,130 @@ public class MediaObject extends IdentifiedGedComNode
             {
                 result += " - ";
             }
-            
+
             result += relativePath;
         }
-        
+
         if (result.isEmpty())
         {
             result = "Media Object";
         }
-        
+
         return result;
+    }
+
+    /**
+     * Resolves a FILE-style path (either absolute or relative to the Gedcom
+     * document directory) into an absolute {@link File}. Returns {@code null}
+     * if {@code filePath} is {@code null}.
+     */
+    public File resolveFile(String filePath)
+    {
+        if (filePath == null)
+        {
+            return null;
+        }
+
+        File file = new File(filePath);
+        if (file.isAbsolute())
+        {
+            return file;
+        }
+
+        File gedcomFile = this.getDocument().getFile();
+        if (gedcomFile == null)
+        {
+            return new File(filePath);
+        }
+
+        File gedcomDir = gedcomFile.getParentFile();
+        if (gedcomDir == null)
+        {
+            return new File(filePath);
+        }
+
+        return new File(gedcomDir, filePath);
+    }
+
+    /**
+     * Attempts to rename the actual file referenced by this media object from
+     * {@code oldPath} to {@code newPath}. Both paths may be relative (in
+     * which case they are resolved against the Gedcom document directory) or
+     * absolute.
+     *
+     * <p>The {@link #FILE} attribute of this object is <strong>not</strong>
+     * modified by this method. It is the caller's responsibility to update
+     * the attribute on success and to keep the previous value on failure.</p>
+     *
+     * @param oldPath The previous file path (the one currently stored as
+     *                {@link #FILE}). May be {@code null} only when there is
+     *                no previous file.
+     * @param newPath The new file path (relative or absolute).
+     * @return {@code null} when the rename succeeded (or when both paths
+     *         resolve to the same file), or a human-readable error message
+     *         describing why the rename failed.
+     */
+    public String renameMediaFile(String oldPath, String newPath)
+    {
+        if (oldPath == null)
+        {
+            return "The current file path is not set.";
+        }
+
+        File oldFile = this.resolveFile(oldPath);
+        File newFile = this.resolveFile(newPath);
+
+        if (oldFile == null || newFile == null)
+        {
+            return "The new file path is invalid.";
+        }
+
+        // No-op: both paths point to the same file on disk.
+        try
+        {
+            if (oldFile.getCanonicalFile().equals(newFile.getCanonicalFile()))
+            {
+                return null;
+            }
+        }
+        catch (IOException e)
+        {
+            // If canonical paths cannot be resolved, fall back to a plain
+            // comparison; the rename may still be attempted.
+            if (oldFile.equals(newFile))
+            {
+                return null;
+            }
+        }
+
+        if (!oldFile.exists())
+        {
+            return "Source file does not exist: " + oldFile.getAbsolutePath();
+        }
+
+        if (newFile.exists())
+        {
+            return "Destination file already exists: " + newFile.getAbsolutePath();
+        }
+
+        // Make sure the parent directory of the destination exists so the
+        // rename has a chance to succeed when the user is moving the file
+        // to a new folder.
+        File newParent = newFile.getParentFile();
+        if (newParent != null && !newParent.exists())
+        {
+            if (!newParent.mkdirs())
+            {
+                return "Could not create destination directory: " + newParent.getAbsolutePath();
+            }
+        }
+
+        if (!oldFile.renameTo(newFile))
+        {
+            return "Failed to rename file from \"" + oldFile.getAbsolutePath()
+                    + "\" to \"" + newFile.getAbsolutePath() + "\".";
+        }
+
+        return null;
     }
 }

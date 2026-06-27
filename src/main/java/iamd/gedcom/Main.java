@@ -11,21 +11,10 @@ public class Main
     {
         try
         {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         }
-        catch (ClassNotFoundException e)
-        {
-            e.printStackTrace(System.err);
-        }
-        catch (InstantiationException e)
-        {
-            e.printStackTrace(System.err);
-        }
-        catch (IllegalAccessException e)
-        {
-            e.printStackTrace(System.err);
-        }
-        catch (UnsupportedLookAndFeelException e)
+        catch (ClassNotFoundException | InstantiationException
+                | IllegalAccessException | UnsupportedLookAndFeelException e)
         {
             e.printStackTrace(System.err);
         }

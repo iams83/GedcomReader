@@ -142,7 +142,7 @@ public class MainWindow extends JFrame
         
         this.add(new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, this.leftStackPanel, this.mainStackPanel));
         this.add(this.statusLine, BorderLayout.SOUTH);
-        this.setSize(1000, 700);
+        this.setSize(1800, 1400);
         
         this.statusLine.setBorder(new EmptyBorder(2, 2, 2, 2));
         

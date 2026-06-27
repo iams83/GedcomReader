@@ -3,6 +3,7 @@ package iamd.gedcom.ui;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Shape;
@@ -45,31 +46,69 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
     private Point2D cropDragCurrent;
     private boolean cropDragging = false;
     
-    private static final int[] RECTANGLE_COLORS = {
-        0x800000FF, // Blue
-        0x80FF0000, // Red
-        0x8000FF00, // Green
-        0x80FFFF00, // Yellow
-        0x80FF00FF, // Magenta
-        0x8000FFFF, // Cyan
-        0x80FF8000, // Orange
-        0x808000FF, // Purple
-        0x8000FF80, // Light Green
-        0x80FF0080, // Pink
-    };
-    
+    // Single source of truth for each individual's color. Used for the
+    // rectangle border, the label background, and (with a lower alpha) the
+    // semi-transparent fill of the in-progress crop drag rectangle.
     private static final int[] RECTANGLE_BORDER_COLORS = {
         0xFF0000FF, // Blue
         0xFFFF0000, // Red
-        0xFF00FF00, // Green
-        0xFFFFFF00, // Yellow
+        0xFF00B000, // Green (muted so it reads on a white background)
+        0xFFB0B000, // Yellow (muted olive)
         0xFFFF00FF, // Magenta
-        0xFF00FFFF, // Cyan
+        0xFF00B0B0, // Cyan (muted teal)
         0xFFFF8000, // Orange
         0xFF8000FF, // Purple
-        0xFF00FF80, // Light Green
+        0xFF00B060, // Light Green (muted for readability)
         0xFFFF0080, // Pink
     };
+    
+    // Alpha (0–255) used for the semi-transparent fill of the in-progress
+    // crop drag rectangle, derived from the opaque RECTANGLE_BORDER_COLORS
+    // by replacing the top byte.
+    private static final int DRAG_FILL_ALPHA = 0x80;
+    
+    /** Returns the semi-transparent fill color for the drag rectangle. */
+    private static int dragFillRgb(int borderRgb)
+    {
+        return (borderRgb & 0x00FFFFFF) | (DRAG_FILL_ALPHA << 24);
+    }
+    
+    // Border stroke widths (in pixels) used when drawing rectangles.
+    // The inactive stroke is also reused for the in-progress crop rectangle
+    // because it shares the same visual weight.
+    private static final float ACTIVE_BORDER_STROKE_WIDTH = 4.0f;
+    private static final float INACTIVE_BORDER_STROKE_WIDTH = 2.0f;
+    
+    // Font used to draw each individual's name label.
+    private static final Font LABEL_FONT = new Font("Arial", Font.BOLD, 12);
+    
+    // Spacing (in pixels) used when positioning a label relative to the
+    // top-left corner of its CROP rectangle. LABEL_BACKGROUND_PADDING also
+    // drives the inner text X offset: when the background adds
+    // LABEL_BACKGROUND_PADDING/2 pixels of padding on each side, the text
+    // starts at LABEL_INNER_MARGIN + LABEL_BACKGROUND_PADDING/2 from the
+    // rectangle edge.
+    private static final int LABEL_BACKGROUND_PADDING = 4;
+    private static final int LABEL_INNER_MARGIN = 0;
+    private static final int LABEL_OFFSET_X = 0;
+    private static final int LABEL_OUTER_BACKGROUND_INSET = 0;
+    
+    // Position and color of placeholder text shown when no image is available.
+    private static final int PLACEHOLDER_TEXT_X = 20;
+    private static final int PLACEHOLDER_TEXT_Y = 30;
+    private static final Color PLACEHOLDER_TEXT_COLOR = Color.WHITE;
+    
+    // Color used to fill the empty panel background.
+    private static final Color PANEL_BACKGROUND_COLOR = Color.DARK_GRAY;
+    
+    // Minimum size (in pixels) of a crop drag before it is considered a real
+    // crop operation (smaller drags are treated as accidental clicks).
+    private static final int MIN_CROP_DRAG_SIZE = 2;
+    
+    // Default size (in pixels) used when a media object has no image to size
+    // the placeholder against.
+    private static final double DEFAULT_MEDIA_WIDTH = 400;
+    private static final double DEFAULT_MEDIA_HEIGHT = 300;
     
     private static class IndividualReference
     {
@@ -139,7 +178,7 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
                         
                         // Only apply a new crop if the user actually dragged
                         // (a meaningful distance)
-                        if (width > 2 && height > 2)
+                        if (width > MIN_CROP_DRAG_SIZE && height > MIN_CROP_DRAG_SIZE)
                         {
                             // Find the active reference. The user must have
                             // clicked inside a rectangle to start cropping,
@@ -277,7 +316,7 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
                         if (!seenIndividuals.containsKey(ind))
                         {
                             seenIndividuals.put(ind, true);
-                            this.individualReferences.add(new IndividualReference(ind, ref, colorIndex % RECTANGLE_COLORS.length));
+                            this.individualReferences.add(new IndividualReference(ind, ref, colorIndex % RECTANGLE_BORDER_COLORS.length));
                             colorIndex++;
                         }
                         break;
@@ -294,7 +333,8 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
         else
         {
             // For non-image media, use a default size
-            initializeBoundingBox(new Rectangle2D.Double(0, 0, 400, 300));
+            initializeBoundingBox(new Rectangle2D.Double(
+                0, 0, DEFAULT_MEDIA_WIDTH, DEFAULT_MEDIA_HEIGHT));
         }
         
         // Update cursor and panning/scaling based on current tool mode
@@ -315,6 +355,46 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
                 // Methods not available
             }
         }
+    }
+    
+    /**
+     * Sets the image to display and the individuals (with their references)
+     * whose CROP rectangles and labels should be drawn on top of it.
+     * Intended for read-only preview subclasses (e.g. the one used in
+     * {@link MediaObjectDialog}) that don't have a backing {@link MediaObject}
+     * to pull the data from; both panels then share exactly the same drawing
+     * logic, colors, fonts and layout.
+     */
+    protected void setImageAndReferences(BufferedImage image,
+                                         Map<Individual, MediaObjectReference> references)
+    {
+        this.image = image;
+        this.individualReferences.clear();
+        this.activeCropReference = null;
+        this.cropDragging = false;
+        
+        if (references != null)
+        {
+            int colorIndex = 0;
+            for (Map.Entry<Individual, MediaObjectReference> entry : references.entrySet())
+            {
+                this.individualReferences.add(new IndividualReference(
+                    entry.getKey(), entry.getValue(),
+                    colorIndex % RECTANGLE_BORDER_COLORS.length));
+                colorIndex++;
+            }
+        }
+        
+        if (image != null)
+        {
+            initializeBoundingBox(new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight()));
+        }
+        else
+        {
+            initializeBoundingBox(new Rectangle2D.Double(0, 0, DEFAULT_MEDIA_WIDTH, DEFAULT_MEDIA_HEIGHT));
+        }
+        
+        repaint();
     }
     
     private void handleClick(Point screenPoint)
@@ -381,7 +461,7 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
         double width = Math.abs(releasePoint.getX() - cropDragStart.getX());
         double height = Math.abs(releasePoint.getY() - cropDragStart.getY());
         
-        if (width > 2 && height > 2)
+        if (width > MIN_CROP_DRAG_SIZE && height > MIN_CROP_DRAG_SIZE)
         {
             int cropX = (int) Math.max(0, x);
             int cropY = (int) Math.max(0, y);
@@ -416,8 +496,8 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
         }
         
         // No CROP: use the full image bounds
-        double width = (this.image != null) ? this.image.getWidth() : 400;
-        double height = (this.image != null) ? this.image.getHeight() : 300;
+        double width = (this.image != null) ? this.image.getWidth() : DEFAULT_MEDIA_WIDTH;
+        double height = (this.image != null) ? this.image.getHeight() : DEFAULT_MEDIA_HEIGHT;
         return new Rectangle2D.Double(0, 0, width, height);
     }
     
@@ -464,24 +544,19 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
     @Override
     protected void paint(Graphics2D g2, AffineTransform tx2, Dimension size)
     {
-        g2.setColor(Color.DARK_GRAY);
+        g2.setColor(PANEL_BACKGROUND_COLOR);
         g2.fillRect(0, 0, size.width, size.height);
         
-        if (this.mediaObject == null)
-        {
-            g2.setColor(Color.WHITE);
-            g2.drawString("No media object selected", 20, 30);
-            return;
-        }
-        
-        // Draw the media object image or icon
+        // Pick the best image to draw: a directly-set image (used by
+        // read-only previews like MediaObjectDialog.PreviewImagePanel) wins;
+        // otherwise we fall back to the icon associated with the bound
+        // MediaObject for non-image media types.
         if (this.image != null)
         {
             g2.drawImage(this.image, tx2, this);
         }
-        else
+        else if (this.mediaObject != null)
         {
-            // Draw placeholder for non-image media
             javax.swing.ImageIcon icon = this.mediaObject.getIconType();
             if (icon != null && icon.getImage() != null)
             {
@@ -495,9 +570,16 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
             }
             else
             {
-                g2.setColor(Color.WHITE);
-                g2.drawString("Unable to display media", 20, 30);
+                g2.setColor(PLACEHOLDER_TEXT_COLOR);
+                g2.drawString("Unable to display media", PLACEHOLDER_TEXT_X, PLACEHOLDER_TEXT_Y);
+                return;
             }
+        }
+        else
+        {
+            g2.setColor(PLACEHOLDER_TEXT_COLOR);
+            g2.drawString("No media object selected", PLACEHOLDER_TEXT_X, PLACEHOLDER_TEXT_Y);
+            return;
         }
         
         // Draw rectangles for all individuals
@@ -512,7 +594,7 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
             
             // Draw border
             g2.setColor(new Color(RECTANGLE_BORDER_COLORS[ir.colorIndex], true));
-            g2.setStroke(new java.awt.BasicStroke(isActive ? 4 : 2));
+            g2.setStroke(new java.awt.BasicStroke(isActive ? ACTIVE_BORDER_STROKE_WIDTH : INACTIVE_BORDER_STROKE_WIDTH));
             g2.draw(transformedRect);
             
             // Draw label
@@ -520,24 +602,62 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
             if (label != null && !label.isEmpty())
             {
                 java.awt.Font originalFont = g2.getFont();
-                g2.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
+                g2.setFont(LABEL_FONT);
                 
                 java.awt.FontMetrics fm = g2.getFontMetrics();
                 int textWidth = fm.stringWidth(label);
-                int textHeight = fm.getHeight();
+                int textAscent = fm.getAscent();
+                int textDescent = fm.getDescent();
+                int bgWidth = textWidth + LABEL_BACKGROUND_PADDING;
+                int bgHeight = textAscent + textDescent + LABEL_BACKGROUND_PADDING;
                 
                 // Position label at top-left of rectangle (in screen coordinates)
                 Point2D labelPos = tx2.transform(
                     new Point2D.Double(rect.getX(), rect.getY()), null);
                 
-                // Draw background for label
-                g2.setColor(new Color(255, 255, 255, 200));
-                g2.fillRect((int)labelPos.getX() - 2, (int)labelPos.getY() - textHeight - 2, 
-                           textWidth + 4, textHeight + 4);
+                // When the rectangle's top-left point is at (0, 0) — either
+                // because there is no CROP (in which case getRectangleForReference
+                // returns the full image bounds at (0, 0)) or because the
+                // CROP rectangle explicitly starts at (0, 0) — place the label
+                // inside the rectangle; otherwise place it outside (above).
+                Crop refCrop = ir.ref.CROP;
+                boolean labelInside = (refCrop == null
+                    || (refCrop.LEFT == 0 && refCrop.TOP == 0));
                 
-                // Draw label text
-                g2.setColor(new Color(RECTANGLE_BORDER_COLORS[ir.colorIndex], true));
-                g2.drawString(label, (int)labelPos.getX(), (int)labelPos.getY() - 2);
+                // X positioning is the same regardless of inside/outside:
+                // the background starts at the rectangle's left edge and the
+                // text starts half the background padding inside it.
+                int bgX = (int)labelPos.getX() + LABEL_OFFSET_X;
+                int textX = bgX + LABEL_BACKGROUND_PADDING / 2;
+                
+                // Y positioning differs: the text is always vertically centered
+                // in its background (ascent + descent + padding). The whole
+                // label is shifted to be inside or outside the rectangle.
+                int bgY;
+                if (labelInside)
+                {
+                    // Background sits just below the corner; the text is
+                    // centered inside the background using the ascent.
+                    bgY = (int)labelPos.getY() + LABEL_INNER_MARGIN;
+                }
+                else
+                {
+                    // Anchor the background's bottom edge LABEL_OUTER_BACKGROUND_INSET
+                    // pixels above the corner (so the label visibly tucks just
+                    // above the rectangle). The text is then centered inside.
+                    bgY = (int)labelPos.getY() - LABEL_OUTER_BACKGROUND_INSET - bgHeight;
+                }
+                int textY = bgY + LABEL_BACKGROUND_PADDING / 2 + textAscent;
+                
+                // Draw background for label (opaque rectangle color — colors are
+                // reversed relative to the rectangle outline so the label is
+                // always readable).
+                g2.setColor(new Color(RECTANGLE_BORDER_COLORS[ir.colorIndex]));
+                g2.fillRect(bgX, bgY, bgWidth, bgHeight);
+                
+                // Draw label text in opaque white.
+                g2.setColor(Color.WHITE);
+                g2.drawString(label, textX, textY);
                 
                 g2.setFont(originalFont);
             }
@@ -556,13 +676,16 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
             
             Shape dragRect = tx2.createTransformedShape(new Rectangle2D.Double(x, y, width, height));
             
-            // Use the active reference's color for the drag rectangle
+            // Use the active reference's color for the drag rectangle: a
+            // semi-transparent fill (so the image shows through) with an
+            // opaque border matching the regular rectangle outline.
             int colorIndex = this.activeCropReference.colorIndex;
-            g2.setColor(new Color(RECTANGLE_COLORS[colorIndex], true));
+            int borderRgb = RECTANGLE_BORDER_COLORS[colorIndex];
+            g2.setColor(new Color(dragFillRgb(borderRgb), true));
             g2.fill(dragRect);
             
-            g2.setColor(new Color(RECTANGLE_BORDER_COLORS[colorIndex], true));
-            g2.setStroke(new java.awt.BasicStroke(2));
+            g2.setColor(new Color(borderRgb));
+            g2.setStroke(new java.awt.BasicStroke(INACTIVE_BORDER_STROKE_WIDTH));
             g2.draw(dragRect);
         }
     }

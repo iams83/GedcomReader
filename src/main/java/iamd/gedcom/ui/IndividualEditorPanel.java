@@ -110,7 +110,9 @@ public class IndividualEditorPanel extends EditorPanel
         globalPanelGenerator.setBackground(this.getBackground());
         
         JLabel removeIndividualIcon = new JLabel(Resources.DeleteDisabledIcon);
+        removeIndividualIcon.setOpaque(true);
         JLabel removeIndividualLabel = new JLabel(Messages.getString("IndividualEditorPanel.remove")); //$NON-NLS-1$
+        removeIndividualLabel.setOpaque(true);
 
         MouseAdapter mouseListener = new MouseAdapter()
         {

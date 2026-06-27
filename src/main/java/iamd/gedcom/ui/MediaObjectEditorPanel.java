@@ -7,12 +7,16 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.lang.reflect.Field;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
@@ -21,9 +25,11 @@ import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.MediaObject;
 import iamd.gedcom.datamodel.MediaObjectReference;
 import iamd.rsrc.Resources;
+import iamd.ui.AttributeEditorListener;
 import iamd.ui.BorderListPanelGenerator;
 import iamd.ui.RowPanelList;
 import iamd.ui.RowPanelListListener;
+import iamd.ui.TextLineEditor;
 
 @SuppressWarnings("serial")
 public class MediaObjectEditorPanel extends EditorPanel
@@ -35,7 +41,16 @@ public class MediaObjectEditorPanel extends EditorPanel
     final private ArrayList<Runnable>               mediaObjectChangedListeners    = new ArrayList<Runnable>();
     
     final private JPanel infoPanel = new JPanel(new BorderLayout());
-    
+
+    final private TextLineEditor titleEditor = new TextLineEditor();
+    final private TextLineEditor formEditor  = new TextLineEditor();
+    final private TextLineEditor fileEditor  = new TextLineEditor();
+
+    // Holds the value of MediaObject.FILE as it was before the most recent
+    // user edit, so the rename logic can locate the actual file on disk even
+    // after the AttributeBinder has already updated the FILE attribute.
+    private final AtomicReference<String> previousFileRef = new AtomicReference<String>(null);
+
     private MediaObject mediaObject;
 
     public MediaObjectEditorPanel(JFrame frame)
@@ -54,6 +69,98 @@ public class MediaObjectEditorPanel extends EditorPanel
         panel.setPreferredSize(new Dimension(300, panel.getPreferredSize().height));
         
         this.add(panel);
+
+        // Listen for edits on the title / format editors so the document is
+        // marked as modified (CHAN attribute is updated on save).
+        iamd.ui.AttributeEditorListener attributeEditorListener = new iamd.ui.AttributeEditorListener()
+        {
+            @Override
+            public void attributeModified(Object editingObject, java.lang.reflect.Field editingField, Object value)
+            {
+                if (MediaObjectEditorPanel.this.mediaObject == null)
+                    return;
+
+                for (GedComModifiedListener listener : MediaObjectEditorPanel.this.gedcomModifiedListeners)
+                    listener.attributeModified(MediaObjectEditorPanel.this.mediaObject);
+
+                MediaObjectEditorPanel.this.invalidate();
+                MediaObjectEditorPanel.this.updateUI();
+                MediaObjectEditorPanel.this.repaint();
+            }
+        };
+
+        this.titleEditor.addAttributeEditionListener(attributeEditorListener);
+        this.formEditor .addAttributeEditionListener(attributeEditorListener);
+
+        // Listener that handles edits on the FILE editor. When the user
+        // confirms a new file path, this listener:
+        //  1. Attempts to rename the actual file on disk (resolving relative
+        //     paths against the Gedcom document directory).
+        //  2. On success, fires the usual "document modified" listeners so the
+        //     change is persisted on save.
+        //  3. On failure, reverts the FILE attribute to its previous value,
+        //     refreshes the editor display, and shows the user a descriptive
+        //     error message.
+        // The AttributeBinder has already set FILE to the new value before
+        // this listener runs, so the rename is performed against the value
+        // previously cached in previousFileRef.
+        AttributeEditorListener<String> fileEditorListener = new AttributeEditorListener<String>()
+        {
+            @Override
+            public void attributeModified(Object editingObject, Field editingField, String value)
+            {
+                MediaObject mo = MediaObjectEditorPanel.this.mediaObject;
+                if (mo == null || editingObject != mo)
+                    return;
+
+                String newValue = value;
+                String oldValue = MediaObjectEditorPanel.this.previousFileRef.get();
+
+                String renameError = mo.renameMediaFile(oldValue, newValue);
+
+                if (renameError == null)
+                {
+                    // Success: keep the new value and notify listeners.
+                    MediaObjectEditorPanel.this.previousFileRef.set(newValue);
+
+                    for (GedComModifiedListener listener : MediaObjectEditorPanel.this.gedcomModifiedListeners)
+                        listener.attributeModified(mo);
+
+                    // Refresh the display panel so the (possibly renamed) file
+                    // is reloaded from its new location.
+                    MediaObjectEditorPanel.this.fireMediaObjectChanged();
+                }
+                else
+                {
+                    // Failure: revert FILE, reset the editor display to the
+                    // previous relative path and inform the user.
+                    mo.FILE = oldValue;
+                    MediaObjectEditorPanel.this.previousFileRef.set(oldValue);
+
+                    String oldDisplay = mo.getRelativeFilePath();
+                    if (oldDisplay == null)
+                        oldDisplay = oldValue != null ? oldValue : "";
+                    MediaObjectEditorPanel.this.fileEditor.initializeValue(oldDisplay);
+
+                    String keptMessage = MessageFormat.format(
+                            Messages.getString("MediaObjectEditorPanel.fileRenameKept"),
+                            oldDisplay);
+                    String errorTitle = Messages.getString("MediaObjectEditorPanel.fileRenameErrorTitle");
+                    String errorHeader = Messages.getString("MediaObjectEditorPanel.fileRenameError");
+
+                    JOptionPane.showMessageDialog(
+                            MediaObjectEditorPanel.this.frame,
+                            errorHeader + "\n" + renameError + "\n\n" + keptMessage,
+                            errorTitle,
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+                MediaObjectEditorPanel.this.invalidate();
+                MediaObjectEditorPanel.this.updateUI();
+                MediaObjectEditorPanel.this.repaint();
+            }
+        };
+        this.fileEditor.addAttributeEditionListener(fileEditorListener);
 
         this.addComponentListener(new ComponentAdapter()
         {
@@ -140,9 +247,33 @@ public class MediaObjectEditorPanel extends EditorPanel
         
         BorderListPanelGenerator infoGenerator = new BorderListPanelGenerator(BorderLayout.NORTH);
         
-        // Add media object info
-        infoGenerator.add(createTopBorder(newJLabel("Media Object")));
-        infoGenerator.add(createTopBorder(newReadonlyJTextField(mediaObject.getDisplayLabel())));
+        // Add media object info - editable title, format and file path. The
+        // file path editor behaves specially: editing the field attempts to
+        // rename the actual file on disk and reverts to the previous value
+        // if the rename fails (see the file editor listener installed in the
+        // constructor).
+        this.titleEditor.bindValue(mediaObject, "TITL");
+        this.formEditor .bindValue(mediaObject, "FORM");
+
+        // Bind the file editor and override the displayed text with the
+        // relative path so the user sees the same value they used to, but
+        // can edit it freely. The previousFileRef is updated to the current
+        // (raw) FILE attribute so the rename logic can locate the source
+        // file on disk.
+        this.fileEditor.bindValue(mediaObject, "FILE");
+        String initialRelativePath = mediaObject.getRelativeFilePath();
+        this.fileEditor.initializeValue(
+                initialRelativePath != null ? initialRelativePath : "");
+        this.previousFileRef.set(mediaObject.FILE);
+
+        infoGenerator.add(createTopBorder(newJLabel(Messages.getString("MediaObjectEditorPanel.title"))));
+        infoGenerator.add(createTopBorder(this.titleEditor));
+
+        infoGenerator.add(createTopBorder(newJLabel(Messages.getString("MediaObjectEditorPanel.format"))));
+        infoGenerator.add(createTopBorder(this.formEditor));
+
+        infoGenerator.add(createTopBorder(newJLabel(Messages.getString("MediaObjectEditorPanel.file"))));
+        infoGenerator.add(createTopBorder(this.fileEditor));
         
         // Add list of linked individuals. Enable delete (unlink) buttons on each row,
         // and offer an "add" button at the lower part of the panel to link new individuals.
@@ -244,7 +375,9 @@ public class MediaObjectEditorPanel extends EditorPanel
         // document (and any references from individuals), then refreshes the
         // display panel and navigates back to the first individual.
         JLabel removeMediaObjectIcon = new JLabel(Resources.DeleteDisabledIcon);
+        removeMediaObjectIcon.setOpaque(true);
         JLabel removeMediaObjectLabel = new JLabel(Messages.getString("MediaObjectEditorPanel.remove")); //$NON-NLS-1$
+        removeMediaObjectLabel.setOpaque(true);
 
         MouseAdapter deleteMouseListener = new MouseAdapter()
         {
