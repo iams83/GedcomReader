@@ -9,7 +9,6 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
 import iamd.gedcom.datamodel.MediaObject;
-import iamd.gedcom.datamodel.MediaObjectReference;
 import iamd.gedcom.rsrc.Resources;
 import iamd.gedcom.ui.MediaObjectDisplayPanel.MediaObjectDisplayListener;
 
@@ -17,7 +16,6 @@ import iamd.gedcom.ui.MediaObjectDisplayPanel.MediaObjectDisplayListener;
  * A wrapper panel for MediaObjectDisplayPanel that adds a toggleable,
  * self-exclusive toolbar at the top to switch between selection and crop tools.
  */
-@SuppressWarnings("serial")
 public class MediaObjectPanelWithToolbar extends JPanel
 {
     public enum ToolMode

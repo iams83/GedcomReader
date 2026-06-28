@@ -114,7 +114,6 @@ abstract public class GedComNode
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     public void print(PrintStream out, int depth)
     {
         if (depth >= 0)

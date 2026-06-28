@@ -18,10 +18,10 @@ public class LongTextEditor extends TextAreaEditor
     {
         super(numRows);
         
-        this.addAttributeEditionListener(new AttributeEditorListener()
+        this.addAttributeEditionListener(new AttributeEditorListener<String>()
         {
             @Override
-            public void attributeModified(Object editingObject, Field editingField, Object value)
+            public void attributeModified(Object editingObject, Field editingField, String value)
             {
                 if (LongTextEditor.this.model == null ||
                     LongTextEditor.this.editingField == null ||
@@ -34,10 +34,8 @@ public class LongTextEditor extends TextAreaEditor
                 {
                     LongText longText = null;
                     
-                    String text = (String) value;
-                    
-                    if (text != null && !text.isEmpty())
-                        longText = new LongText(LongTextEditor.this.editingField.getName(), model, text);
+                    if (value != null && !value.isEmpty())
+                        longText = new LongText(LongTextEditor.this.editingField.getName(), model, value);
                     
                     LongTextEditor.this.editingField.set(LongTextEditor.this.editingObject, longText);
                 }

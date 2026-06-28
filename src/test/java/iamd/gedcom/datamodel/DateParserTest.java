@@ -242,7 +242,7 @@ class DateParserTest
         void spanishLocale() throws GedComParseException
         {
             Locale original = Locale.getDefault();
-            Locale.setDefault(new Locale("es"));
+            Locale.setDefault(Locale.forLanguageTag("es"));
             try
             {
                 String spanishJan = Month.JAN.humanName();

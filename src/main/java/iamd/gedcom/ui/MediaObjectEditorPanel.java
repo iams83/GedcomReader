@@ -72,10 +72,10 @@ public class MediaObjectEditorPanel extends EditorPanel
 
         // Listen for edits on the title / format editors so the document is
         // marked as modified (CHAN attribute is updated on save).
-        iamd.ui.AttributeEditorListener attributeEditorListener = new iamd.ui.AttributeEditorListener()
+        AttributeEditorListener<String> attributeEditorListener = new AttributeEditorListener<String>()
         {
             @Override
-            public void attributeModified(Object editingObject, java.lang.reflect.Field editingField, Object value)
+            public void attributeModified(Object editingObject, java.lang.reflect.Field editingField, String value)
             {
                 if (MediaObjectEditorPanel.this.mediaObject == null)
                     return;

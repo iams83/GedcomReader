@@ -10,7 +10,6 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
 import iamd.gedcom.datamodel.Individual;
-import iamd.ui.ChartPanelListener;
 
 /**
  * A wrapper panel for GedComGraph that adds a toggleable, self-exclusive
@@ -18,7 +17,6 @@ import iamd.ui.ChartPanelListener;
  * user always has access to switch between chart types and the graph view
  * regardless of which main panel is currently showing.
  */
-@SuppressWarnings("serial")
 public class GraphPanelWithToolbar extends JPanel
 {
     /**

@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -38,7 +37,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.JOptionPane;
 
 import iamd.gedcom.datamodel.Document;
 import iamd.gedcom.datamodel.ExifOrientationUtil;
@@ -54,7 +52,7 @@ import iamd.ui.RowPanelList;
 import iamd.ui.RowPanelListListener;
 import iamd.ui.TextLineEditor;
 
-@SuppressWarnings("serial")
+
 public class MediaObjectDialog extends JDialog
 {
     static class MediaObjectRow
@@ -128,7 +126,7 @@ public class MediaObjectDialog extends JDialog
 
     // Index of the tabs in {@link #tabbedPane} (only valid when allowNew is true).
     static final private int TAB_SELECT_EXISTING = 0;
-    static final private int TAB_ADD_NEW = 1;
+    //static final private int TAB_ADD_NEW = 1;
     static final private int TAB_BULK_IMPORT = 2;
 
     /**

@@ -248,30 +248,14 @@ public class MediaObject extends IdentifiedGedComNode
     
     public String getDisplayLabel()
     {
-        String result = "";
-
         if (this.TITL != null)
-        {
-            result += this.TITL;
-        }
+            return this.TITL;
 
         String relativePath = this.getRelativeFilePath();
         if (relativePath != null)
-        {
-            if (result.length() > 0)
-            {
-                result += " - ";
-            }
+            return relativePath;
 
-            result += relativePath;
-        }
-
-        if (result.isEmpty())
-        {
-            result = "Media Object";
-        }
-
-        return result;
+        return "Media Object";
     }
 
     /**

@@ -1,6 +1,5 @@
 package iamd.gedcom.ui.labeling;
 
-import java.awt.FontMetrics;
 import java.awt.Rectangle;
 
 /**

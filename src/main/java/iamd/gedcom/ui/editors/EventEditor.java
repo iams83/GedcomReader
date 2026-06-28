@@ -138,7 +138,7 @@ public class EventEditor extends JPanel
         this.dateEditor.alignValueRight();
         this.timeEditor.alignValueRight();
         
-        AttributeEditorListener attributesEditorListener = new AttributeEditorListener()
+        AttributeEditorListener<Object> attributesEditorListener = new AttributeEditorListener<Object>()
         {
             @Override
             public void attributeModified(Object editingObject, Field editingField, Object value)
@@ -208,10 +208,10 @@ public class EventEditor extends JPanel
             }
         };
 
-        AttributeEditorListener happenedValueEditorListener = new AttributeEditorListener()
+        AttributeEditorListener<Bool> happenedValueEditorListener = new AttributeEditorListener<Bool>()
         {
             @Override
-            public void attributeModified(Object editingObject, Field editingField, Object value)
+            public void attributeModified(Object editingObject, Field editingField, Bool value)
             {
                 if (EventEditor.this.happened != Bool.Y)
                 {
@@ -231,10 +231,10 @@ public class EventEditor extends JPanel
             }
         };
 
-        AttributeEditorListener eventDetailValueEditorListener = new AttributeEditorListener()
+        AttributeEditorListener<String> eventDetailValueEditorListener = new AttributeEditorListener<String>()
         {
             @Override
-            public void attributeModified(Object editingObject, Field editingField, Object value)
+            public void attributeModified(Object editingObject, Field editingField, String value)
             {
                 if ((EventEditor.this.date != null && !EventEditor.this.date.isEmpty()) ||
                     (EventEditor.this.time != null && !EventEditor.this.time.isEmpty()) ||
@@ -311,7 +311,7 @@ public class EventEditor extends JPanel
         this.document = document;
     }
     
-    public void addAttributeEditionListener(AttributeEditorListener attributeEditorListener)
+    public void addAttributeEditionListener(AttributeEditorListener<Event> attributeEditorListener)
     {
         this.attributesBinder.addAttributeEditionListener(attributeEditorListener);
     }

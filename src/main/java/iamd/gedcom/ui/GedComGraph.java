@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +30,7 @@ import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.Individual.Sex;
 import iamd.gedcom.format.IdentifiedGedComNode;
 
-@SuppressWarnings("serial")
+
 public class GedComGraph extends JPanel
 {
     static
@@ -39,7 +38,7 @@ public class GedComGraph extends JPanel
         System.setProperty("org.graphstream.ui.renderer", "org.graphstream.ui.j2dviewer.J2DGraphRenderer");
     }
 
-    class GraphMouseListener extends MouseAdapter implements MouseMotionListener
+    class GraphMouseListener extends MouseAdapter
     {
         final private ViewPanel view;
 
