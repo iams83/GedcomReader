@@ -11,7 +11,7 @@ public class Resources
 
     public static final ImageIcon PictureIcon, AudioIcon, VideoIcon, DocumentIcon, MediaIcon;
 
-    public static final ImageIcon ExploreIcon, CropImageIcon;
+    public static final ImageIcon ExploreIcon, CropImageIcon, OpenFileIcon;
 
     static
     {
@@ -19,8 +19,8 @@ public class Resources
 
         ImageIcon pictureIcon0 = null, audioIcon0 = null, videoIcon0 = null, documentIcon0 = null, mediaIcon0 = null;
 
-        ImageIcon exploreIcon0 = null, cropImageIcon0 = null;
-        
+        ImageIcon exploreIcon0 = null, cropImageIcon0 = null, openFileIcon0 = null;
+
         try
         {
             lavandaIcon0 = new ImageIcon(ImageIO.read(Resources.class.getResourceAsStream("Lavanda.png"))); //$NON-NLS-1$
@@ -40,6 +40,8 @@ public class Resources
             exploreIcon0 = new ImageIcon(ImageIO.read(Resources.class.getResourceAsStream("explore.png"))); //$NON-NLS-1$
 
             cropImageIcon0 = new ImageIcon(ImageIO.read(Resources.class.getResourceAsStream("crop.png"))); //$NON-NLS-1$
+
+            openFileIcon0 = new ImageIcon(ImageIO.read(Resources.class.getResourceAsStream("openfile.png"))); //$NON-NLS-1$
         }
         catch(IOException | IllegalArgumentException e)
         {
@@ -64,6 +66,8 @@ public class Resources
             ExploreIcon = exploreIcon0;
 
             CropImageIcon = cropImageIcon0;
+
+            OpenFileIcon = openFileIcon0;
         }
     }
 

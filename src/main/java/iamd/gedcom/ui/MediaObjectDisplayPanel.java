@@ -347,21 +347,33 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
     {
         return this.toolMode;
     }
-    
+
+    /**
+     * Returns the {@link MediaObject} currently bound to this panel, or
+     * {@code null} if none has been set. Exposed so that adjacent
+     * toolbar buttons (e.g. "open with system default tool") can
+     * resolve the current model without the caller having to track it
+     * alongside the panel.
+     */
+    public MediaObject getModel()
+    {
+        return this.mediaObject;
+    }
+
     public void setModel(MediaObject mediaObject)
     {
         this.mediaObject = mediaObject;
         this.individualReferences.clear();
         this.activeCropReference = null;
         this.cropDragging = false;
-        
+
         if (mediaObject == null)
         {
             this.image = null;
             this.repaint();
             return;
         }
-        
+
         // Load image
         this.image = mediaObject.getImage();
         
