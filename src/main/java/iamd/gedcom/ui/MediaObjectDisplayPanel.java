@@ -1,4 +1,4 @@
-﻿package iamd.gedcom.ui;
+package iamd.gedcom.ui;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -471,6 +471,29 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
         if (scenePoint == null)
             return;
         
+        // Labels take priority over the crop rectangles themselves: clicking
+        // on a label selects that individual (in selection mode it navigates
+        // to them via the listener; in crop mode it sets them as the active
+        // crop reference) even when the label sits on top of another
+        // rectangle or outside its own rectangle's bounds. This makes the
+        // label act as an unambiguous, never-overlapped hit target.
+        IndividualReference labelHit = findReferenceAtLabel(screenPoint);
+        if (labelHit != null)
+        {
+            if (this.toolMode == ToolMode.CROP)
+            {
+                this.activeCropReference = labelHit;
+                this.repaint();
+            }
+            else if (this.listener != null)
+            {
+                this.listener.rectangleClicked(labelHit.individual, labelHit.ref);
+            }
+            return;
+        }
+        
+        // No label hit: fall through to the rectangle hit-test below.
+        
         // In selection mode, click navigates to the individual.
         // In crop mode, click selects the individual to crop.
         if (this.toolMode != ToolMode.SELECTION)
@@ -507,6 +530,53 @@ public class MediaObjectDisplayPanel extends GraphicsPanel
                 return;
             }
         }
+    }
+    
+    /**
+     * Returns the {@link IndividualReference} whose label currently contains
+     * the given viewport (screen) point, or {@code null} if no label is hit.
+     * Used by {@link #handleClick} to give label clicks priority over
+     * rectangle clicks, so clicking on a label unambiguously selects the
+     * labelled person even when the label overlaps another rectangle or
+     * sits outside its own rectangle's bounds.
+     *
+     * <p>Mirrors the label layout performed in {@link #paint}: every
+     * individual with a non-empty name is anchored at the top-left of their
+     * crop rectangle (in scene space) and run through the same
+     * {@link LabelLayoutEngine} using the panel's current transform. The
+     * resulting placements are in viewport coordinates, so they can be
+     * tested directly against the click point.</p>
+     */
+    private IndividualReference findReferenceAtLabel(Point screenPoint)
+    {
+        if (this.image == null || this.individualReferences.isEmpty())
+            return null;
+        
+        // Build the same per-individual label items that paint() uses, but
+        // in a local list so a concurrent paint cycle is not disturbed.
+        // Items without a label text are skipped (they would never produce
+        // a placement anyway).
+        List<ReferenceLabelItem> items = new ArrayList<>(this.individualReferences.size());
+        for (IndividualReference ir : this.individualReferences)
+        {
+            String label = ir.individual.getName();
+            if (label == null || label.isEmpty())
+                continue;
+            Rectangle2D.Double rect = getRectangleForReference(ir);
+            items.add(new ReferenceLabelItem(ir, rect));
+        }
+        if (items.isEmpty())
+            return null;
+        
+        List<PlacedLabel<ReferenceLabelItem>> placed =
+                this.labelLayoutEngine.layout(items, getTransform());
+        
+        for (PlacedLabel<ReferenceLabelItem> p : placed)
+        {
+            if (p.getPlacement().getBounds().contains(screenPoint))
+                return p.getItem().reference;
+        }
+        return null;
     }
     
     /**

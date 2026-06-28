@@ -45,6 +45,7 @@ import iamd.gedcom.datamodel.MediaObject;
 import iamd.gedcom.datamodel.MediaObject.MediaType;
 import iamd.gedcom.datamodel.MediaObjectReference;
 import iamd.gedcom.format.GedComContext;
+import iamd.gedcom.ui.editors.LongTextEditor;
 import iamd.ui.BorderListPanelGenerator;
 import iamd.ui.ComboBoxEditor;
 import iamd.ui.FilePathEditor;
@@ -101,6 +102,8 @@ public class MediaObjectDialog extends JDialog
             return Messages.getString("SelectorDialog." + type.name().toLowerCase()); //$NON-NLS-1$
         }
     };
+
+    LongTextEditor note = new LongTextEditor(4);
 
     final private JTabbedPane tabbedPane = new JTabbedPane();
 
@@ -391,6 +394,8 @@ public class MediaObjectDialog extends JDialog
         globalPanelGenerator.add(this.titl);
         globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.type")));                 //$NON-NLS-1$
         globalPanelGenerator.add(this.type);
+        globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.note")));
+        globalPanelGenerator.add(this.note);
 
         globalPanelGenerator.setBackground(this.getBackground());
 
@@ -864,6 +869,8 @@ public class MediaObjectDialog extends JDialog
         this.form   .bindValue(newMediaObject, "FORM"); //$NON-NLS-1$
         this.titl   .bindValue(newMediaObject, "TITL"); //$NON-NLS-1$
         this.type   .bindValue(newMediaObject, "TYPE"); //$NON-NLS-1$
+        this.note   .setDocument(document);
+        this.note   .bindValue(newMediaObject, "NOTE");
 
         this.filterBy(""); //$NON-NLS-1$
 

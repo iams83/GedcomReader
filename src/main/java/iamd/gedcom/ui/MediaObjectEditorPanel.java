@@ -24,6 +24,7 @@ import iamd.gedcom.datamodel.Document;
 import iamd.gedcom.datamodel.Individual;
 import iamd.gedcom.datamodel.MediaObject;
 import iamd.gedcom.datamodel.MediaObjectReference;
+import iamd.gedcom.ui.editors.LongTextEditor;
 import iamd.rsrc.Resources;
 import iamd.ui.AttributeEditorListener;
 import iamd.ui.BorderListPanelGenerator;
@@ -45,6 +46,7 @@ public class MediaObjectEditorPanel extends EditorPanel
     final private TextLineEditor titleEditor = new TextLineEditor();
     final private TextLineEditor formEditor  = new TextLineEditor();
     final private TextLineEditor fileEditor  = new TextLineEditor();
+    final private LongTextEditor noteEditor  = new LongTextEditor(4);
 
     // Holds the value of MediaObject.FILE as it was before the most recent
     // user edit, so the rename logic can locate the actual file on disk even
@@ -266,6 +268,8 @@ public class MediaObjectEditorPanel extends EditorPanel
                 initialRelativePath != null ? initialRelativePath : "");
         this.previousFileRef.set(mediaObject.FILE);
 
+        this.noteEditor.setDocument(mediaObject.getDocument());
+        this.noteEditor.bindValue(mediaObject, "NOTE");
         infoGenerator.add(createTopBorder(newJLabel(Messages.getString("MediaObjectEditorPanel.title"))));
         infoGenerator.add(createTopBorder(this.titleEditor));
 
@@ -274,6 +278,8 @@ public class MediaObjectEditorPanel extends EditorPanel
 
         infoGenerator.add(createTopBorder(newJLabel(Messages.getString("MediaObjectEditorPanel.file"))));
         infoGenerator.add(createTopBorder(this.fileEditor));
+        infoGenerator.add(createTopBorder(newJLabel(Messages.getString("MediaObjectEditorPanel.note"))));
+        infoGenerator.add(createTopBorder(this.noteEditor));
         
         // Add list of linked individuals. Enable delete (unlink) buttons on each row,
         // and offer an "add" button at the lower part of the panel to link new individuals.

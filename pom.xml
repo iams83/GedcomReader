@@ -16,6 +16,11 @@
 	    <maven.compiler.source>21</maven.compiler.source>
 	    <maven.compiler.target>21</maven.compiler.target>
         <mainClass>iamd.gedcom.Main</mainClass>
+        <!-- Pin source encoding so .java, .properties and resource files are
+             always read as UTF-8 regardless of the build machine's locale.
+             Without this, Maven warns and platform-default encoding is used. -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <dependencies>

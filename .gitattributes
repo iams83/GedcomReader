@@ -1,0 +1,63 @@
+# Normalize line endings to LF on commit and force LF on checkout.
+# Java/Maven/pom.xml all happily read LF, but the historical files in
+# this repo were CRLF; this prevents tools (and Git's autocrlf) from
+# silently flipping them on every operation.
+
+# Source code: force LF (matches Maven's default expectation and avoids
+# spurious "whole-file CRLF/LF" churn in diffs).
+*.java        text eol=lf
+*.kt          text eol=lf
+*.xml         text eol=lf
+*.gradle      text eol=lf
+*.kts         text eol=lf
+*.properties  text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+*.json        text eol=lf
+*.md          text eol=lf
+
+# Scripts: LF (POSIX expectation; avoids CRLF in .bat/.ps1 surprises).
+*.sh          text eol=lf
+*.bash        text eol=lf
+
+# Windows-only scripts must keep CRLF or Windows breaks them.
+*.bat         text eol=crlf
+*.cmd         text eol=crlf
+*.ps1         text eol=lf
+
+# Generated/build outputs: do not touch, do not diff textually.
+target/       binary
+build/        binary
+*.class       binary
+*.jar         binary
+*.war         binary
+*.exe         binary
+*.dll         binary
+*.so          binary
+
+# Images and icons: always binary, never normalized.
+*.png         binary
+*.jpg         binary
+*.jpeg        binary
+*.gif         binary
+*.ico         binary
+*.icns        binary
+*.svg         text eol=lf
+
+# IDE / OS junk: ignore even from diff stat.
+.vscode/      export-ignore
+.idea/        export-ignore
+*.iml         binary
+.DS_Store     export-ignore
+Thumbs.db     export-ignore
+
+# Mark the build script explicitly to avoid Git fiddling with it.
+build.bat     text eol=crlf
+
+# Helper for archives.
+*.zip         binary
+*.gz          binary
+*.tar         binary
+
+# Anything not matched above: leave alone, do not auto-convert.
+*             text=auto

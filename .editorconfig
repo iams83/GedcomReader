@@ -1,0 +1,50 @@
+# EditorConfig is awesome: https://EditorConfig.org
+# Most modern editors (VS Code, IntelliJ, Eclipse, Notepad++) honor this
+# automatically. It prevents the "every contributor picks their own
+# whitespace" failure mode that produced today's CRLF/LF/BOM mess.
+
+root = true
+
+[*]
+charset                  = utf-8
+end_of_line              = lf
+insert_final_newline     = true
+trim_trailing_whitespace = true
+indent_style             = space
+indent_size              = 4
+
+# Java's brace style and existing source layout.
+[*.java]
+indent_size              = 4
+max_line_length          = 120
+
+# XML/POM: indent 4 spaces, no trailing whitespace, UTF-8 without BOM.
+[*.xml]
+indent_size              = 4
+
+# Properties files: ASCII-only is the safest default because ResourceBundle
+# used to mangle non-ASCII; modern JDK 9+ supports UTF-8. Pinning the
+# charset here makes the choice explicit and consistent.
+[*.properties]
+charset                  = utf-8
+end_of_line              = lf
+
+# YAML / JSON: 2-space indent is conventional.
+[*.{yml,yaml,json}]
+indent_size              = 2
+
+# Markdown: don't trim trailing whitespace (it's meaningful — line breaks).
+[*.md]
+trim_trailing_whitespace = false
+
+# Windows scripts: keep CRLF or Windows breaks.
+[*.{bat,cmd}]
+end_of_line              = crlf
+
+# Shell / Python: LF, 4 spaces.
+[*.{sh,py}]
+end_of_line              = lf
+
+# Makefiles: must be tabs, LF.
+[Makefile]
+indent_style             = tab

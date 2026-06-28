@@ -102,6 +102,9 @@ public class MediaObject extends IdentifiedGedComNode
     
     @GEDNodeAttribute
     public String TITL;
+    
+    @GEDNodeAttribute
+    public LongText NOTE;
 
     public MediaObject(String gedCode, Document context)
     {
