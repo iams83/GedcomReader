@@ -16,6 +16,7 @@ import iamd.gedcom.datamodel.Document;
 import iamd.gedcom.datamodel.Event;
 import iamd.gedcom.ui.Messages;
 import iamd.gedcom.format.GedComParseException;
+import iamd.gedcom.ui.EditorPanel;
 import iamd.ui.AttributeBinder;
 import iamd.ui.AttributeEditorListener;
 import iamd.ui.BorderListPanelGenerator;
@@ -279,17 +280,17 @@ public class EventEditor extends JPanel
         timePanel.add(this.timeEditor);
         
         BorderListPanelGenerator placePanel = new BorderListPanelGenerator(BorderLayout.WEST);
-        placePanel.add(new JLabel(Messages.getString("EventEditor.place"))); //$NON-NLS-1$
-        
+        placePanel.add(EditorPanel.newContainerBackgroundLabel(Messages.getString("EventEditor.place"))); //$NON-NLS-1$
+
         if (this.showHappened)
-            this.add(happenedPanel.extractPanel(new JLabel(this.label)));
+            this.add(happenedPanel.extractPanel(EditorPanel.newContainerBackgroundLabel(this.label)));
         else
-            this.add(new JLabel(this.label));
-        
+            this.add(EditorPanel.newContainerBackgroundLabel(this.label));
+
         if (showExpanded)
         {
-            this.add(indentLeftPanel(datePanel.extractPanel(new JLabel(Messages.getString("EventEditor.date"))))); //$NON-NLS-1$
-            this.add(indentLeftPanel(timePanel.extractPanel(new JLabel(Messages.getString("EventEditor.time"))))); //$NON-NLS-1$
+            this.add(indentLeftPanel(datePanel.extractPanel(EditorPanel.newContainerBackgroundLabel(Messages.getString("EventEditor.date"))))); //$NON-NLS-1$
+            this.add(indentLeftPanel(timePanel.extractPanel(EditorPanel.newContainerBackgroundLabel(Messages.getString("EventEditor.time"))))); //$NON-NLS-1$
             this.add(indentLeftPanel(placePanel.extractPanel(this.placeEditor)));
         }
         

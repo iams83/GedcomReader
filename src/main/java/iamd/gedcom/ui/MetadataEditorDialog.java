@@ -2,8 +2,10 @@ package iamd.gedcom.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
 
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -92,10 +94,14 @@ public class MetadataEditorDialog extends JDialog
         gedFormatPanel.add(this.dest);
 
         sourceNameLabel.setBorder(new EmptyBorder(20, 0, 0, 0));
-        sourceNameLabel.setBackground(new Color(0, 0, 0, 0));
-        
+        // No setBackground here on purpose: sourceNameLabel is created via
+        // newJLabel (which now produces a container-background-tracking
+        // label). Forcing its bg to (0,0,0,0) would undo that and let the
+        // parent's underlying paint leak through, reintroducing the noisy
+        // look we just removed.
+
         destLabel.setBorder(new EmptyBorder(20, 0, 0, 0));
-        destLabel.setBackground(new Color(0, 0, 0, 0));
+        // See comment on sourceNameLabel above.
 
         BorderListPanelGenerator submitterPanel = new BorderListPanelGenerator(BorderLayout.NORTH);
         submitterPanel.setBackground(this.getBackground());
@@ -128,26 +134,52 @@ public class MetadataEditorDialog extends JDialog
         this.add(tabbedPane);
     }
 
+    /**
+     * Delegates to the shared container-background-tracking factory in
+     * {@link EditorPanel}, so that labels in this dialog stay visually
+     * aligned with whatever container they end up inside — including
+     * across {@code UIManager} / Look &amp; Feel changes.
+     */
     protected JLabel newJLabel(String string)
     {
-        JLabel label = new JLabel(string);
-        label.setBackground(new Color(0, 0, 0, 0));
-        return label;
+        return EditorPanel.newContainerBackgroundLabel(string);
     }
 
+    /**
+     * See {@link #newJLabel(String)} — delegates to the equivalent factory.
+     * (No public helper for text fields exists yet because this dialog
+     * currently uses its own {@link ReadOnlyTextField} for the read-only
+     * fields; newReadonlyJTextField is kept here for API parity with the
+     * parent panel and in case it's wired up in the future.)
+     */
     protected JTextField newReadonlyJTextField(String string)
     {
-        JTextField textField = new JTextField(string);
-        textField.setBackground(new Color(0, 0, 0, 0));
+        JTextField textField = new JTextField(string)
+        {
+            @Override
+            protected void paintComponent(Graphics g)
+            {
+                Container parent = getParent();
+                Color bg = (parent != null) ? parent.getBackground() : getBackground();
+                g.setColor(bg);
+                g.fillRect(0, 0, getWidth(), getHeight());
+                super.paintComponent(g);
+            }
+        };
         textField.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
         textField.setEditable(false);
+        textField.setOpaque(true);
         return textField;
     }
 
     protected JComponent createTopBorder(JComponent component)
     {
+        // Mirror EditorPanel's fix: keep the component non-opaque so its
+        // background is inherited from the parent, instead of pinning it to
+        // a fully-transparent color that would let textured L&F backgrounds
+        // bleed through.
         component.setBorder(new EmptyBorder(6, 0, 0, 0));
-        component.setBackground(new Color(0, 0, 0, 0));
+        component.setOpaque(false);
         return component;
     }
 

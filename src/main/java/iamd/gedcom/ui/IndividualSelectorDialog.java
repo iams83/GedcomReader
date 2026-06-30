@@ -151,7 +151,7 @@ public class IndividualSelectorDialog extends JDialog
             
             BorderListPanelGenerator topPanelGenerator = new BorderListPanelGenerator(BorderLayout.EAST);
             topPanelGenerator.add(searchTextField);
-            topPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.filter"))); //$NON-NLS-1$
+            topPanelGenerator.add(EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.filter"))); //$NON-NLS-1$
             
             JPanel topPanel = topPanelGenerator.extractPanel();
             topPanel.setBorder(new EmptyBorder(0, 0, 10, 0));
@@ -182,22 +182,22 @@ public class IndividualSelectorDialog extends JDialog
                 
                 BorderListPanelGenerator globalPanelGenerator = new BorderListPanelGenerator(BorderLayout.NORTH);
     
-                JLabel sexLabel = new JLabel(Messages.getString("SelectorDialog.genre")); //$NON-NLS-1$
+                JLabel sexLabel = EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.genre")); //$NON-NLS-1$
                 sexLabel.setPreferredSize(this.sex.getPreferredSize());
-                
+
                 JPanel topPanel1 = new JPanel(new BorderLayout());
-                topPanel1.add(new JLabel(Messages.getString("SelectorDialog.name"))); //$NON-NLS-1$
+                topPanel1.add(EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.name"))); //$NON-NLS-1$
                 topPanel1.add(sexLabel, BorderLayout.EAST);
-                
+
                 JPanel topPanel2 = new JPanel(new BorderLayout());
                 topPanel2.add(this.name);
                 topPanel2.add(this.sex, BorderLayout.EAST);
-                
+
                 globalPanelGenerator.add(topPanel1);
                 globalPanelGenerator.add(topPanel2);
-                globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.surname")));             //$NON-NLS-1$
+                globalPanelGenerator.add(EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.surname")));             //$NON-NLS-1$
                 globalPanelGenerator.add(this.surname);
-                globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.alias")));                 //$NON-NLS-1$
+                globalPanelGenerator.add(EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.alias")));                 //$NON-NLS-1$
                 globalPanelGenerator.add(this.nick);
                 globalPanelGenerator.setBackground(this.getBackground());
     

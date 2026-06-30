@@ -319,7 +319,7 @@ public class MediaObjectDialog extends JDialog
             tableScrollPane.setPreferredSize(new Dimension(0, 150));
 
             BorderListPanelGenerator topPanelGenerator = new BorderListPanelGenerator(BorderLayout.NORTH);
-            topPanelGenerator.add(searchPanelGenerator.extractPanel(new JLabel(Messages.getString("SelectorDialog.filter")))); //$NON-NLS-1$
+            topPanelGenerator.add(searchPanelGenerator.extractPanel(EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.filter")))); //$NON-NLS-1$
             topPanelGenerator.add(tableScrollPane);
 
             JPanel topPanel = topPanelGenerator.extractPanel(imagePreviewPanel);
@@ -381,20 +381,20 @@ public class MediaObjectDialog extends JDialog
 
         BorderListPanelGenerator globalPanelGenerator = new BorderListPanelGenerator(BorderLayout.NORTH);
 
-        JLabel formLabel = new JLabel(Messages.getString("SelectorDialog.format")); //$NON-NLS-1$
+        JLabel formLabel = EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.format")); //$NON-NLS-1$
         formLabel.setPreferredSize(this.form.getPreferredSize());
 
         JPanel topPanel1 = new JPanel(new BorderLayout());
-        topPanel1.add(new JLabel(Messages.getString("SelectorDialog.file"))); //$NON-NLS-1$
+        topPanel1.add(EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.file"))); //$NON-NLS-1$
         topPanel1.add(formLabel, BorderLayout.EAST);
 
         globalPanelGenerator.add(topPanel1);
         globalPanelGenerator.add(topPanel2);
-        globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.title")));             //$NON-NLS-1$
+        globalPanelGenerator.add(EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.title")));             //$NON-NLS-1$
         globalPanelGenerator.add(this.titl);
-        globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.type")));                 //$NON-NLS-1$
+        globalPanelGenerator.add(EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.type")));                 //$NON-NLS-1$
         globalPanelGenerator.add(this.type);
-        globalPanelGenerator.add(new JLabel(Messages.getString("SelectorDialog.note")));
+        globalPanelGenerator.add(EditorPanel.newContainerBackgroundLabel(Messages.getString("SelectorDialog.note")));
         globalPanelGenerator.add(this.note);
 
         globalPanelGenerator.setBackground(this.getBackground());
