@@ -258,16 +258,18 @@ public class GedComChartPanel extends ChartPanel<GedComChartElement>
 
         int siblingIndex = 0;
 
+        Font panelFont = this.getFont();
+
         for (Individual sibling : olderSiblings)
         {
             GedComChartRect siblingArc = new GedComChartRect(
-                    - minRadius - (siblingIndex + 1) * extraRadiusPerSibling, 
-                    - height / 2, 
-                    extraRadiusPerSibling, 
+                    - minRadius - (siblingIndex + 1) * extraRadiusPerSibling,
+                    - height / 2,
+                    extraRadiusPerSibling,
                     height,
-                    sibling);
+                    sibling, panelFont);
 
-            siblingArc.setFont(this.getFont());
+            siblingArc.setFont(panelFont);
             siblingArc.setColor(Color.lightGray);
 
             addArc(siblingArc);
@@ -280,13 +282,13 @@ public class GedComChartPanel extends ChartPanel<GedComChartElement>
         for (Individual sibling : youngerSiblings)
         {
             GedComChartRect siblingArc = new GedComChartRect(
-                    minRadius + siblingIndex * extraRadiusPerSibling, 
-                    - height / 2, 
-                    extraRadiusPerSibling, 
+                    minRadius + siblingIndex * extraRadiusPerSibling,
+                    - height / 2,
+                    extraRadiusPerSibling,
                     height,
-                    sibling);
+                    sibling, panelFont);
 
-            siblingArc.setFont(this.getFont());
+            siblingArc.setFont(panelFont);
             siblingArc.setColor(Color.lightGray);
 
             addArc(siblingArc);
